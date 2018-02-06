@@ -1,0 +1,6 @@
+*.txt
+*.bin
+*.root
+*.swp
+PixelPacker
+PixelEncoder
