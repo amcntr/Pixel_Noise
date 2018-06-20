@@ -102,11 +102,10 @@ class Pixel_Store {
   // if total = false, then return hits in fed for event id
   int Get_FEDhits(int FEDID, bool total = true, int eventID = 0);
   // returns roc with highest hits in 1 event for fedid
+  // the vector index 0 is ch id, 1 is roc id, 2 is hit count
   std::vector<int> Get_RocHits(int FEDID);
   // returns id of fed with highest avg hits
   int Get_FEDhighest();
-  // returns event id with highests hits in fedid.
-  int Get_EventWithHighestHitsFED(int FEDID);
 };
 
 // checks if pixel is already stored and adds to container if not
@@ -305,20 +304,6 @@ std::vector<int> Pixel_Store::Get_RocHits(int FEDID) {
   return rochits;
 }
 
-// return event id for event with highest hits in fed with fedid
-int Pixel_Store::Get_EventWithHighestHitsFED(int FEDID) {
-  int eventID;
-  int hits = 0;
-  int highestHits = 0;
-  for (auto const& event : storage) {
-    hits = Get_FEDhits(FEDID, false, event.first);
-    if (hits > highestHits) {
-      highestHits = hits;
-      eventID = event.first;
-    }
-  }
-  return eventID;
-}
 
 // outputs 12 binary files of "hits per roc" and pixel addresses
 // for the fed during all events in data file. Half of the files
@@ -331,8 +316,8 @@ void encoder(int targetFED, Events& events) {
   std::unordered_map<int, uint32_t> hits;
 
   // These are buffers for writing the data to files
-  std::vector<uint32_t>
-      RocHits[12];  // 1 for each block of the hit files. 4 blocks per file.
+  // 1 for each block of the hit files. 4 blocks per file.
+  std::vector<uint32_t> RocHits[12];
   std::vector<uint32_t> PixAdd[3];
 
   std::unordered_map<int, std::unordered_map<int, int>> chPlay;
