@@ -1,0 +1,74 @@
+#include <TTree.h>
+
+struct PIX {
+	int fed;
+	int ch;
+	int col;
+	int row;
+};
+
+class Pixels {
+private:
+	vector<int> fed;
+	vector<int> ch;
+	vector<int> col;
+	vector<int> row;
+public:
+	bool check(PIX pix){
+		for(int i = 0; i<fed.size(); i++) {
+			if ((pix.fed == fed[i]) && (pix.ch == ch[i]) 
+				&& (pix.col == col[i]) && (pix.row == row[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+	void add(PIX pix){
+		fed.push_back(pix.fed);
+		ch.push_back(pix.ch);
+		col.push_back(pix.col);
+		row.push_back(pix.row);
+	}
+	PIX get(int i) {
+		PIX pix;
+		pix.fed = fed[i];
+		pix.ch = ch[i];
+		pix.row = row[i];
+		pix.col = col[i];
+		return pix;
+	}
+	int size() {
+		return fed.size();
+	}
+};
+
+Pixels generate(int hits) {
+	PIX pix;
+	Pixels pixels;
+	for (int i = 0; i < hits; i++) {	
+		pix.fed = (rand()%10) + 1;
+		pix.ch = (rand()%10) + 1;
+		pix.row = (rand()%10) + 1;
+		pix.col = (rand()%10) + 1;
+		if (pixels.check(pix)) {
+			i -= 1;
+		}
+		else {
+			pixels.add(pix);
+		}
+	}
+	return pixels;
+}
+
+void testtree2() {
+	TTree *tree = new TTree("why", "live");
+	int hits = 10;
+	Pixels pixels = generate(hits);
+	PIX pix;
+	tree->Branch("hit", &pix, "fed/B:ch/B:col/B:row/B");
+	for (int i = 0; i < pixels.size(); i++) {
+		pix = pixels.get(i);
+		tree->Fill();
+	}
+	tree->StartViewer();
+}
