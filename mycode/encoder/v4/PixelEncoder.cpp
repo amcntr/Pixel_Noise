@@ -174,11 +174,12 @@ int Pixel_Store::Get_FEDCount(bool total, int EventID) {
 // returns count of channels stored
 int Pixel_Store::Get_ChanCount(bool total, int EventID, int FEDID) {
   int ChCt = 0;
-  if (total)
+  if (total) {
     for (auto const& event : storage)
       for (auto const& fed : event.second)
         for (auto const& lay : fed.second)
           ChCt += lay.second.size();
+  }
 
   else
     for (auto const& lay : storage[EventID][FEDID])
@@ -194,12 +195,13 @@ int Pixel_Store::Get_ROCCount(bool total,
                               int layer,
                               int ChanID) {
   int ROCCt = 0;
-  if (total)
+  if (total) {
     for (auto const& event : storage)
       for (auto const& fed : event.second)
         for (auto const& lay : fed.second)
           for (auto const& ch : lay.second)
             ROCCt += ch.second.size();
+  }
 
   else
     ROCCt = storage[EventID][FEDID][layer][ChanID].size();
@@ -216,13 +218,14 @@ int Pixel_Store::Get_PixelCount(bool total,
                                 int ROCID) {
   int PixCt = 0;
   // if total true, return count of all pixels
-  if (total)
+  if (total) {
     for (auto const& event : storage)
       for (auto const& fed : event.second)
         for (auto const& ly : fed.second)
           for (auto const& ch : ly.second)
             for (auto const& roc : ch.second)
               PixCt += roc.second.size();
+  }
 
   // if total false then return pixel count inside roc
   else
@@ -234,7 +237,7 @@ int Pixel_Store::Get_PixelCount(bool total,
 // returns total hits for all events found in a single fed
 int Pixel_Store::Get_FEDhits(int FEDID, bool total, int eventID) {
   int hitNum = 0;
-  if (total)
+  if (total) {
     for (auto const& event : storage)
       for (auto const& fed : event.second)
         if (fed.first == FEDID)
@@ -242,13 +245,15 @@ int Pixel_Store::Get_FEDhits(int FEDID, bool total, int eventID) {
             for (auto const& chan : lay.second)
               for (auto const& roc : chan.second)
                 hitNum += roc.second.size();
+  }
 
-        // returns hits in fed for single event
-        else
-          for (auto const& chan : storage[eventID][FEDID])
-            for (auto const& lay : chan.second)
-              for (auto const& roc : lay.second)
-                hitNum += roc.second.size();
+  // returns hits in fed for single event
+  else {
+    for (auto const& chan : storage[eventID][FEDID])
+      for (auto const& lay : chan.second)
+        for (auto const& roc : lay.second)
+          hitNum += roc.second.size();
+  }
   return hitNum;
 }
 
