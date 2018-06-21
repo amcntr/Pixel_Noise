@@ -413,7 +413,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Done encoding with an encoding time of "
             << (((float)et2 - (float)et1) / CLOCKS_PER_SEC) << " seconds.";
 
-  file->close();
+  file->Close();
 
   // output process time in seconds
   t2 = clock();
