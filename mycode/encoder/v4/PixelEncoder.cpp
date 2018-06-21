@@ -26,6 +26,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <map>
+#include <algorithm>
 
 #include <TROOT.h>
 #include <TFile.h>
@@ -39,16 +41,16 @@
 //	  row is shifted 16, col is shifted 8
 using Pixels = std::unordered_map<uint32_t, uint32_t>;
 // roc id as key and row map as value
-using ROCs = std::unordered_map<int, Pixels>;
+using ROCs = std::map<int, Pixels>;
 // channel id as key and roc map
-using Chans = std::unordered_map<int, ROCs>;
+using Chans = std::map<int, ROCs>;
 // layer number as key, chans map as value
 //     0 is unknown, 1-4 is BPix, 5+ is FPix
-using Layers = std::unordered_map<int, Chans>;
+using Layers = std::map<int, Chans>;
 // fed id as key and channel map
-using FEDs = std::unordered_map<int, Layers>;
+using FEDs = std::map<int, Layers>;
 // event id as key and fed map for list of feds
-using Events = std::unordered_map<int, FEDs>;
+using Events = std::map<int, FEDs>;
 
 class Pixel_Store {
   // Multiple Pixel Storage Class
@@ -61,6 +63,8 @@ class Pixel_Store {
  	// id: block id in hits files
  	// value: if a roc in block has irregularly high hits
  	bool rocHigHitpBlock_[12] = {false};
+ 	// channel id occurrences per layer
+ 	std::map<int, std::map<int, int> > chpLay_;
  public:
  	// highest hits roc id
  	// ch, roc of roc with highest hits
@@ -118,17 +122,24 @@ int Pixel_Store::add(int event,
                      int row,
                      int col,
                      int adc) {
-  // merge row and col into unique number by bit shifting them
-  uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
+  // layer 0 is for events with 0 hits
+  if (layer > 0) {
+	  // merge row and col into unique number by bit shifting them
+	  uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
 
-  if (!check(event, fed, layer, ch, roc, rowcol)) {
-    storage[event][fed][layer][ch][roc][rowcol] = (uint32_t)adc;
-    hitspFED_[fed] += 1;
-    // return 0 for no duplicate counting
-    return 0;
-  } else
-    // duplicate found, return 1
-    return 1;
+	  if (!check(event, fed, layer, ch, roc, rowcol)) {
+	    storage[event][fed][layer][ch][roc][rowcol] = (uint32_t)adc;
+	    hitspFED_[fed] += 1;
+	    // return 0 for no duplicate counting
+	    return 0;
+	  } else
+	    // duplicate found, return 1
+	    return 1;
+	}
+	else {
+		storage[event][fed][layer][0][0][(uint32_t)0] = (uint32_t)(0);
+		return 0;
+	}
 }
 
 // checks if pixel is stored in container
@@ -166,18 +177,21 @@ void Pixel_Store::process() {
     for (auto const& fed : event.second) {
       if (fed.first == haFEDID) {
         for (auto const& lay : fed.second) {
-          for (auto const& ch : lay.second) {
-            for (auto const& roc : ch.second) {
-              int index = (int)ceil((float)ch.first/4.0) - 1;
-            	if (roc.second.size() > 15)
-		  					rocHigHitpBlock_[index] = true;
-              if (roc.second.size() > hhROChit) {
-                hhROCID.first = ch.first;
-                hhROCID.second = roc.first;
-                hhROChit = roc.second.size();
-              }
-            }
-          }
+        	if (lay.first != 0) {
+	          for (auto const& ch : lay.second) {
+	            for (auto const& roc : ch.second) {
+	              int index = (int)ceil((float)ch.first/4.0) - 1;
+	            	if (roc.second.size() > 15)
+			  					rocHigHitpBlock_[index] = true;
+	              if (roc.second.size() > hhROChit) {
+	                hhROCID.first = ch.first;
+	                hhROCID.second = roc.first;
+	                hhROChit = roc.second.size();
+	              }
+	            }
+	            chpLay_[lay.first][ch.first] += 1;
+	          }
+	        }
         }
       }
     }
@@ -215,81 +229,97 @@ void Pixel_Store::encode(int targetFED) {
     for (auto const& fed : evt.second) {
       if (fed.first == targetFED) {
         for (auto const& lay : fed.second) {
-          for (auto const& ch : lay.second) {
-          	for (auto const& roc : ch.second) {
-              for (auto const& pix : roc.second) {
-              	// convert pixel addresses into binary
-                uint32_t addressBuffer = 0;
-                addressBuffer = (pix.first | pix.second);
-                if (ch.first < 17)
-                  PixAdd[0].push_back(addressBuffer);
-                if ((ch.first < 33) && (ch.first > 16))
-                  PixAdd[1].push_back(addressBuffer);
-                if (ch.first > 32)
-                  PixAdd[2].push_back(addressBuffer);
-              }
-              // get rocid and hits on roc
-              hits[roc.first] = (uint32_t)(roc.second.size());
-            }
-            // use rocid and hits on roc for conversion
-            uint32_t hitBuffer1 = 0;
-            uint32_t hitBuffer2 = 0;
-            // index for pushing hit binary into hit buffer
-            int index = (int)ceil((float)ch.first/4.0) - 1;
-            // diiferent layers have differenct # of rocs
-            switch (lay.first) {
-              case 1: // layer 1
-                for (int rc = 1; rc < 3; rc++) {
-                  if (hits.count(rc) > 0)
-                    hitBuffer1 = (hitBuffer1 << 16 | hits[rc]);
-                  else
-                    hitBuffer1 <<= 16;
-                }
-                RocHits[index].push_back(hitBuffer1);
-                break;
-              case 2: // layer 2
-                for (int rc = 1; rc < 5; rc++) {
-                  if (hits.count(rc) > 0)
-                    hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
-                  else
-                    hitBuffer1 <<= 8;
-                }
-                if (BlockType[index] < 1)
-                	BlockType[index] = 1;
-                RocHits[index].push_back(hitBuffer1);
-                break;
-              default: // layer 3-4 and fpix
-              	if (rocHigHitpBlock_[index]) {
-              		for (int rc = 1; rc < 5; rc++) {
-              	    if (hits.count(rc) > 0)
-                	    hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
-                  	else
-                    	hitBuffer1 <<= 8;
-                	}
-                	RocHits[index].push_back(hitBuffer1);
-                	for (int rc = 5; rc < 9; rc++) {
-              	    if (hits.count(rc) > 0)
-                	    hitBuffer2 = (hitBuffer2 << 8 | hits[rc]);
-                  	else
-                    	hitBuffer2 <<= 8;
-                	}
-                	RocHits[index].push_back(hitBuffer2);
-                	BlockType[index] = 3;
-              	} else {
-	                for (int rc = 1; rc < 9; rc++) {
-	                  if (hits.count(rc) > 0)
-	                    hitBuffer1 = (hitBuffer1 << 4 | hits[rc]);
-	                  else
-	                    hitBuffer1 <<= 4;
-	                }
-	                if (BlockType[index] < 2)
-                		BlockType[index] = 2;
-	                RocHits[index].push_back(hitBuffer1);
+	        if (lay.first > 0) {
+	          for (auto const& ch : lay.second) {
+	          	for (auto const& roc : ch.second) {
+	              for (auto const& pix : roc.second) {
+	              	// convert pixel addresses into binary
+	                uint32_t addressBuffer = 0;
+	                addressBuffer = (pix.first | pix.second);
+	                if (ch.first < 17)
+	                  PixAdd[0].push_back(addressBuffer);
+	                if ((ch.first < 33) && (ch.first > 16))
+	                  PixAdd[1].push_back(addressBuffer);
+	                if (ch.first > 32)
+	                  PixAdd[2].push_back(addressBuffer);
 	              }
-                break;
-            }
-            hits.clear();
-          }
+	              // get rocid and hits on roc
+	              hits[roc.first] = (uint32_t)(roc.second.size());
+	            }
+	            // use rocid and hits on roc for conversion
+	            uint32_t hitBuffer1 = 0;
+	            uint32_t hitBuffer2 = 0;
+	            // index for pushing hit binary into hit buffer
+	            int index = (int)ceil((float)ch.first/4.0) - 1;
+	            // diiferent layers have differenct # of rocs
+	            switch (lay.first) {
+	              case 1: // layer 1
+	                for (int rc = 1; rc < 3; rc++) {
+	                  if (hits.count(rc) > 0)
+	                    hitBuffer1 = (hitBuffer1 << 16 | hits[rc]);
+	                  else
+	                    hitBuffer1 <<= 16;
+	                }
+	                RocHits[index].push_back(hitBuffer1);
+	                break;
+	              case 2: // layer 2
+	                for (int rc = 1; rc < 5; rc++) {
+	                  if (hits.count(rc) > 0)
+	                    hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
+	                  else
+	                    hitBuffer1 <<= 8;
+	                }
+	                if (BlockType[index] < 1)
+	                	BlockType[index] = 1;
+	                RocHits[index].push_back(hitBuffer1);
+	                break;
+	              default: // layer 3-4 and fpix
+	              	if (rocHigHitpBlock_[index]) {
+	              		for (int rc = 1; rc < 5; rc++) {
+	              	    if (hits.count(rc) > 0)
+	                	    hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
+	                  	else
+	                    	hitBuffer1 <<= 8;
+	                	}
+	                	RocHits[index].push_back(hitBuffer1);
+	                	for (int rc = 5; rc < 9; rc++) {
+	              	    if (hits.count(rc) > 0)
+	                	    hitBuffer2 = (hitBuffer2 << 8 | hits[rc]);
+	                  	else
+	                    	hitBuffer2 <<= 8;
+	                	}
+	                	RocHits[index].push_back(hitBuffer2);
+	                	BlockType[index] = 3;
+	              	} else {
+		                for (int rc = 1; rc < 9; rc++) {
+		                  if (hits.count(rc) > 0)
+		                    hitBuffer1 = (hitBuffer1 << 4 | hits[rc]);
+		                  else
+		                    hitBuffer1 <<= 4;
+		                }
+		                if (BlockType[index] < 2)
+	                		BlockType[index] = 2;
+		                RocHits[index].push_back(hitBuffer1);
+		              }
+	                break;
+	            }
+	            hits.clear();
+	          }
+        	} else {
+        		for (int layer = 1; layer < 6; layer++) {
+        			for (int chan = 1; chan < 49; chan++) {
+        				if (chpLay_[layer].count(chan) > 0) {
+        					int index = (int)ceil((float)ch.first/4.0) - 1;
+	                if ((rocHigHitpBlock_[index]) && (layer > 4)) {
+      							RocHits[index].push_back((uint32_t)0);
+      							RocHits[index].push_back((uint32_t)0);
+      						}
+	                else
+	                	RocHits[index].push_back((uint32_t)0);
+        				}
+        			}
+        		}
+        	}
         }
       }
     }
@@ -361,15 +391,20 @@ int main(int argc, char* argv[]) {
   std::cout << "Program start.\n";
 	
 	// decode data from TTree
-  TTreeReader reader("HighFedData", file);
-  TTreeReaderValue<int> event(reader, "Data._eventID");
-  TTreeReaderValue<int> fed(reader, "Data._fedID");
-  TTreeReaderValue<int> layer(reader, "Data._layer");
-  TTreeReaderValue<int> chan(reader, "Data._channel");
-  TTreeReaderValue<int> roc(reader, "Data._ROC");
-  TTreeReaderValue<int> row(reader, "Data._row");
-  TTreeReaderValue<int> col(reader, "Data._col");
-  TTreeReaderValue<int> adc(reader, "Data._adc");      
+  TTreeReader readerH("HighFedData", file);
+  TTreeReaderValue<int> event(readerH, "Data._eventID");
+  TTreeReaderValue<int> fed(readerH, "Data._fedID");
+  TTreeReaderValue<int> layer(readerH, "Data._layer");
+  TTreeReaderValue<int> chan(readerH, "Data._channel");
+  TTreeReaderValue<int> roc(readerH, "Data._ROC");
+  TTreeReaderValue<int> row(readerH, "Data._row");
+  TTreeReaderValue<int> col(readerH, "Data._col");
+  TTreeReaderValue<int> adc(readerH, "Data._adc");
+
+  TTreeReader readerZ("ZeroData", file);
+  TTreeReaderValue<int> event0(readerz, "Data._eventID");
+  TTreeReaderValue<int> fed0(readerZ, "Data._fedID");
+  TTreeReaderValue<int> layer0(readerZ, "Data._layer");
 
   // declare output file to store output information
   std::ofstream outputFile;
@@ -382,8 +417,11 @@ int main(int argc, char* argv[]) {
   // stores duplicate pixel amount
   int duplicates = 0;
   // loop through TTree and store data in Pixel_Store
-  while (reader.Next()) {
+  while (readerH.Next()) {
     duplicates += pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
+  }
+  while (readerZ.Next()) {
+  	duplicates += pStore.add(*event, *fed, *layer, 0, 0, 0, 0, 0);
   }
 
   st2 = clock();
