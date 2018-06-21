@@ -54,15 +54,24 @@ class Pixel_Store {
   // Multiple Pixel Storage Class
   // stores pixels in a nested map structure
  private:
+ 	// hits per fed
  	// map of total hits per fed
  	std::unordered_map<int, int> hitspFED_;
+ 	// roc high hits per block
+ 	// id: block id in hits files
+ 	// value: if a roc in block has irregularly high hits
+ 	std::unordered_map<int, bool> > rocHigHitpBlock_;
  public:
+ 	// highest hits roc id
  	// ch, roc of roc with highest hits
  	std::pair<int, int> hhROCID;
+ 	// highest hits roc hits
  	// number of hits in above roc 
  	int hhROChit;
+ 	// highest average fed id
  	// highest avg hit per event fed id
  	int haFEDID;
+ 	// highest average fed hits
   // avg number of hits in above fed
  	int haFEDhit;
   // total count of stored items
@@ -97,6 +106,7 @@ class Pixel_Store {
   // populates histograms in future
   // returns number for error checking
   void process();
+  void encode(int targetFED);
 };
 
 // checks if pixel is already stored and adds to container if not
@@ -128,7 +138,6 @@ bool Pixel_Store::check(int event,
                         int chan,
                         int roc,
                         uint32_t rowcol) {
-  // this might not work
   Pixels::iterator pix = 
   		storage[event][fed][layer][chan][roc].find(rowcol);
 
@@ -144,6 +153,7 @@ void Pixel_Store::process() {
 	totalHits = 0;
 	totalEvents = storage.size();
 	totalFEDs = hitspFED_.size();
+	bool highHit = false;
 	// for FEDID in "hits per fed" map
 	for (auto const& fid : hitspFED_) {
 		int avg = fid.second / totalEvents;
@@ -159,12 +169,17 @@ void Pixel_Store::process() {
         for (auto const& lay : fed.second) {
           for (auto const& ch : lay.second) {
             for (auto const& roc : ch.second) {
+            	if ((!highHit) && (roc.second.size() > 15))
+                	highHit = true;
               if (roc.second.size() > hhROChit) {
                 hhROCID.first = ch.first;
                 hhROCID.second = roc.first;
                 hhROChit = roc.second.size();
               }
             }
+          	int index = (int)ceil((float)ch.first/4.0) - 1;
+          	rocHigHitpBlock_[index] = highHit;
+          	highHit = false;
           }
         }
       }
@@ -177,7 +192,7 @@ void Pixel_Store::process() {
 // outputs 12 binary files of "hits per roc" and pixel addresses
 // for the fed during all events in data file. Half of the files
 // are looped to the max file size. The other half are not looped.
-void encoder(int targetFED, Events& events) {
+void Pixel_Store::encode(int targetFED) {
   std::string filename;
   std::ofstream glibhit[3];
   std::ofstream glibpix[3];
@@ -195,29 +210,18 @@ void encoder(int targetFED, Events& events) {
   uint32_t BlockType[12];
   // buffer for pixel address binary
   std::vector<uint32_t> PixAdd[3];
-
-  bool rocHitHigh;
+  // buffer for hits per roc
+  std::unordered_map<int, uint32_t> hits;
   // convert data in map structure to binary format
   // and place in a buffer for file writing.
-  for (auto const& evt : events) {
+  for (auto const& evt : storage) {
     for (auto const& fed : evt.second) {
-      // check for target fed
       if (fed.first == targetFED) {
         for (auto const& lay : fed.second) {
           for (auto const& ch : lay.second) {
-          	// for storing hits per roc
-          	std::unordered_map<int, uint32_t> hits;
-          	// reset high hits on roc checker
-          	rocHitHigh = false;
-            // loop through pixels on roc
-            for (auto const& roc : ch.second) {
-              // get rocid and hits on roc
-              hits[roc.first] = (uint32_t)(roc.second.size());
-              // if hits in roc over 4 bits
-              if ( roc.second.size() > 15 )
-              	rocHitHigh = true;
-              // convert pixel addresses
+          	for (auto const& roc : ch.second) {
               for (auto const& pix : roc.second) {
+              	// convert pixel addresses into binary
                 uint32_t addressBuffer = 0;
                 addressBuffer = (pix.first | pix.second);
                 if (ch.first < 17)
@@ -227,6 +231,8 @@ void encoder(int targetFED, Events& events) {
                 if (ch.first > 32)
                   PixAdd[2].push_back(addressBuffer);
               }
+              // get rocid and hits on roc
+              hits[roc.first] = (uint32_t)(roc.second.size());
             }
             // use rocid and hits on roc for conversion
             uint32_t hitBuffer1 = 0;
@@ -256,7 +262,7 @@ void encoder(int targetFED, Events& events) {
                 RocHits[index].push_back(hitBuffer1);
                 break;
               default: // layer 3-4 and fpix
-              	if (rocHitHigh) {
+              	if (rocHigHitpBlock_[index]) {
               		for (int rc = 1; rc < 5; rc++) {
               	    if (hits.count(rc) > 0)
                 	    hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
@@ -286,6 +292,7 @@ void encoder(int targetFED, Events& events) {
 	              }
                 break;
             }
+            hits.clear();
           }
         }
       }
@@ -408,7 +415,7 @@ int main(int argc, char* argv[]) {
 
   et1 = clock();
   std::cout << "\n\nEncoding binary files...\n";
-  encoder(pStore.haFEDID, pStore.storage);
+  pStore.encode(pStore.haFEDID);
   et2 = clock();
   std::cout << "Done encoding with an encoding time of "
             << (((float)et2 - (float)et1) / CLOCKS_PER_SEC) << " seconds.";
