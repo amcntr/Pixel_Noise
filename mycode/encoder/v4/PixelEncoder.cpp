@@ -276,7 +276,6 @@ void Pixel_Store::encode(int targetFED) {
                 	RocHits[index].push_back(hitBuffer2);
                 	BlockType[index] = 3;
               	} else {
-              		std::cout<<"Shouldn't be here.\n";
 	                for (int rc = 1; rc < 9; rc++) {
 	                  if (hits.count(rc) > 0)
 	                    hitBuffer1 = (hitBuffer1 << 4 | hits[rc]);
