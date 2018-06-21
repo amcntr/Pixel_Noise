@@ -60,7 +60,7 @@ class Pixel_Store {
  	// roc high hits per block
  	// id: block id in hits files
  	// value: if a roc in block has irregularly high hits
- 	std::unordered_map<int, bool> > rocHigHitpBlock_;
+ 	std::unordered_map<int, bool> rocHigHitpBlock_;
  public:
  	// highest hits roc id
  	// ch, roc of roc with highest hits
