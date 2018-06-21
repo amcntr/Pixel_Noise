@@ -219,14 +219,16 @@ void Pixel_Store::encode(int targetFED) {
   // 2: 8 rocs, 32bit
   // 3: 8 rocs, 64bit
   uint32_t BlockType[12];
+  // counts the amount of events
+  // with zero hits
+  int zevCt = 0;
   // buffer for pixel address binary
   std::vector<uint32_t> PixAdd[3];
   // buffer for hits per roc
   std::unordered_map<int, uint32_t> hits;
   // convert data in map structure to binary format
-  // and place in a buffer for file writing.
-int zevCt = 0; 
- for (auto const& evt : storage) {
+  // and place in a buffer for file writing. 
+ 	for (auto const& evt : storage) {
     for (auto const& fed : evt.second) {
       if (fed.first == targetFED) {
         for (auto const& lay : fed.second) {
@@ -307,7 +309,8 @@ int zevCt = 0;
 	            hits.clear();
 	          }
         	} else {
-			zevCt += 1;
+        		// push rocs for events with zero hits
+						zevCt += 1;
         		for (int layer = 1; layer < 6; layer++) {
         			for (int chan = 1; chan < 49; chan++) {
         				if (chpLay_[layer].count(chan) > 0) {
@@ -326,7 +329,7 @@ int zevCt = 0;
       }
     }
   }
-std::cout<<"\nZero Event Count: " << zevCt << '\n';
+	std::cout<<"\nZero Event Count: " << zevCt << '\n';
   // begin writing the files
 
   // These files have to be an exact file size.
