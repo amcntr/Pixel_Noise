@@ -1,4 +1,11 @@
-File output structure
+Use:
+./PixelEncoder filename
+
+Input must be a root file with a TTree that lists pixels.
+
+Outputs an output.txt that includes screen output and 6 binary files.
+
+Binary File structure
 SRAMhit[0-2].bin
   Stores hits on ROCs
   32 bit or 64 bit lines
