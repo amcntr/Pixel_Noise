@@ -130,9 +130,9 @@ bool Pixel_Store::check(int event,
                         uint32_t rowcol) {
   // this might not work
   Pixels::iterator pix = 
-  		storage[event][fed][layer][ch][roc].find(rowcol);
+  		storage[event][fed][layer][chan][roc].find(rowcol);
 
-  if (pix == rc->second.end())
+  if (pix == storage[event][fed][layer][chan][roc].end())
     return false;
 
   return true;
