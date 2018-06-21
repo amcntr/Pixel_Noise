@@ -60,7 +60,7 @@ class Pixel_Store {
  	// roc high hits per block
  	// id: block id in hits files
  	// value: if a roc in block has irregularly high hits
- 	std::unordered_map<int, bool> rocHigHitpBlock_;
+ 	bool rocHigHitpBlock_[12] = {false};
  public:
  	// highest hits roc id
  	// ch, roc of roc with highest hits
@@ -81,8 +81,8 @@ class Pixel_Store {
   // main storage
   Events storage;
  public:
-  Pixel_Store() {}           // constructor
-  virtual ~Pixel_Store() {}  // destructor
+  Pixel_Store() { }           // constructor
+  virtual ~Pixel_Store() { }  // destructor
 
   // adds a pixel to class
   int add(int event,
@@ -153,7 +153,6 @@ void Pixel_Store::process() {
 	totalHits = 0;
 	totalEvents = storage.size();
 	totalFEDs = hitspFED_.size();
-	bool highHit = false;
 	// for FEDID in "hits per fed" map
 	for (auto const& fid : hitspFED_) {
 		int avg = fid.second / totalEvents;
@@ -169,17 +168,16 @@ void Pixel_Store::process() {
         for (auto const& lay : fed.second) {
           for (auto const& ch : lay.second) {
             for (auto const& roc : ch.second) {
-            	if ((!highHit) && (roc.second.size() > 15))
-                	highHit = true;
+                int index = (int)ceil((float)ch.first/4.0) - 1;
+            	if ((!rocHigHitpBlock_[index] ) && (roc.second.size() > 15))
+		  rocHigHitpBlock_[index] = true;
+		
               if (roc.second.size() > hhROChit) {
                 hhROCID.first = ch.first;
                 hhROCID.second = roc.first;
                 hhROChit = roc.second.size();
               }
             }
-          	int index = (int)ceil((float)ch.first/4.0) - 1;
-          	rocHigHitpBlock_[index] = highHit;
-          	highHit = false;
           }
         }
       }
