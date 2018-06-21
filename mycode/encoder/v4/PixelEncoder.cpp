@@ -168,10 +168,9 @@ void Pixel_Store::process() {
         for (auto const& lay : fed.second) {
           for (auto const& ch : lay.second) {
             for (auto const& roc : ch.second) {
-                int index = (int)ceil((float)ch.first/4.0) - 1;
-            	if ((!rocHigHitpBlock_[index] ) && (roc.second.size() > 15))
-		  rocHigHitpBlock_[index] = true;
-		
+              int index = (int)ceil((float)ch.first/4.0) - 1;
+            	if (roc.second.size() > 15)
+		  					rocHigHitpBlock_[index] = true;
               if (roc.second.size() > hhROChit) {
                 hhROCID.first = ch.first;
                 hhROCID.second = roc.first;
@@ -275,9 +274,9 @@ void Pixel_Store::encode(int targetFED) {
                     	hitBuffer2 <<= 8;
                 	}
                 	RocHits[index].push_back(hitBuffer2);
-                	if (BlockType[index] < 3)
-                		BlockType[index] = 3;
+                	BlockType[index] = 3;
               	} else {
+              		std::cout<<"Shouldn't be here.\n";
 	                for (int rc = 1; rc < 9; rc++) {
 	                  if (hits.count(rc) > 0)
 	                    hitBuffer1 = (hitBuffer1 << 4 | hits[rc]);
