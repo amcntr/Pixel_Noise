@@ -408,12 +408,12 @@ int main(int argc, char* argv[]) {
 
   et1 = clock();
   std::cout << "\n\nEncoding binary files...\n";
-  encoder(highest_FEDId, pStore.storage);
+  encoder(pStore.haFEDID, pStore.storage);
   et2 = clock();
   std::cout << "Done encoding with an encoding time of "
             << (((float)et2 - (float)et1) / CLOCKS_PER_SEC) << " seconds.";
 
-  file.close();
+  file->close();
 
   // output process time in seconds
   t2 = clock();
