@@ -225,7 +225,8 @@ void Pixel_Store::encode(int targetFED) {
   std::unordered_map<int, uint32_t> hits;
   // convert data in map structure to binary format
   // and place in a buffer for file writing.
-  for (auto const& evt : storage) {
+int zevCt = 0; 
+ for (auto const& evt : storage) {
     for (auto const& fed : evt.second) {
       if (fed.first == targetFED) {
         for (auto const& lay : fed.second) {
@@ -306,10 +307,11 @@ void Pixel_Store::encode(int targetFED) {
 	            hits.clear();
 	          }
         	} else {
+			zevCt += 1;
         		for (int layer = 1; layer < 6; layer++) {
         			for (int chan = 1; chan < 49; chan++) {
         				if (chpLay_[layer].count(chan) > 0) {
-        					int index = (int)ceil((float)ch.first/4.0) - 1;
+        					int index = (int)ceil((float)chan/4.0) - 1;
 	                if ((rocHigHitpBlock_[index]) && (layer > 4)) {
       							RocHits[index].push_back((uint32_t)0);
       							RocHits[index].push_back((uint32_t)0);
@@ -324,7 +326,7 @@ void Pixel_Store::encode(int targetFED) {
       }
     }
   }
-
+std::cout<<"\nZero Event Count: " << zevCt << '\n';
   // begin writing the files
 
   // These files have to be an exact file size.
@@ -402,7 +404,7 @@ int main(int argc, char* argv[]) {
   TTreeReaderValue<int> adc(readerH, "Data._adc");
 
   TTreeReader readerZ("ZeroData", file);
-  TTreeReaderValue<int> event0(readerz, "Data._eventID");
+  TTreeReaderValue<int> event0(readerZ, "Data._eventID");
   TTreeReaderValue<int> fed0(readerZ, "Data._fedID");
   TTreeReaderValue<int> layer0(readerZ, "Data._layer");
 
@@ -421,7 +423,7 @@ int main(int argc, char* argv[]) {
     duplicates += pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
   }
   while (readerZ.Next()) {
-  	duplicates += pStore.add(*event, *fed, *layer, 0, 0, 0, 0, 0);
+  	duplicates += pStore.add(*event0, *fed0, *layer0, 0, 0, 0, 0, 0);
   }
 
   st2 = clock();
