@@ -92,7 +92,8 @@ class Pixel_Store {
   // populates histograms in future
   // returns number for error checking
   void process();
-  void encode(int targetFED);
+  void encode(int targetFED, std::string title_name = "SRAM");
+  void graph();
 };
 
 #endif
