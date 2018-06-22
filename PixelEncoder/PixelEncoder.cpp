@@ -24,6 +24,9 @@
 
 #include <TROOT.h>
 #include <TPDF.h>
+#include <TCanvas.h>
+#include <TH2.h>
+#include <TH2D.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TTreeReader.h>
@@ -79,7 +82,9 @@ bool Pixel_Store::check(int event,
 void Pixel_Store::process() {
   hhROChit = 0;
   haFEDhit = 0;
+  hhChanhit = 0;
   totalHits = 0;
+  int chHits = 0;
   totalEvents = storage.size();
   totalFEDs = hitspFED_.size();
   // for FEDID in "hits per fed" map
@@ -99,6 +104,7 @@ void Pixel_Store::process() {
             for (auto const& ch : lay.second) {
               for (auto const& roc : ch.second) {
                 int index = (int)ceil((float)ch.first/4.0) - 1;
+                chHits += roc.second.size();
                 if (roc.second.size() > 15)
                   rocHigHitpBlock_[index] = true;
                 if (roc.second.size() > (unsigned int)hhROChit) {
@@ -107,6 +113,9 @@ void Pixel_Store::process() {
                   hhROChit = roc.second.size();
                 }
               }
+              if (chHits > hhChanhit)
+                hhChanhit = chHits;
+              chHits = 0;
               chpLay_[lay.first][ch.first] += 1;
             }
           }
@@ -298,12 +307,12 @@ void Pixel_Store::graph() {
   TH2D *hChanROC[48], *hFEDChan;
   std::string title = "Hits in FED #" + std::to_string(haFEDID) + " in Each Channel;Channel;Number of Hits";
   std::string name = "hChanFED" + std::to_string(haFEDID);
-  hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49., 1000, -0.5, 999.5)
+  hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49., (hhChanhit + 10), -0.5, ((float)hhChanhit + 9.5));
   hFEDChan->SetOption("COLZ");
   for (int i = 0; i < 48; i++) {
-    title = "Hits per ROC in Channel #" + std::to_string(i+1) + ";ROC;Number of Hits";
-    name = "hROCChan" + std::to_string(i+1);
-    hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9., 600, -0.5, 599.5)
+    title = "Hits per ROC in Channel #" + std::to_string(i + 1) + ";ROC;Number of Hits";
+    name = "hROCChan" + std::to_string(i + 1);
+    hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9., (hhROChit + 10), -0.5, ((float)hhROChit + 9.5));
     hChanROC[i]->SetOption("COLZ");
   }
   for (auto const& event : storage) {
@@ -312,22 +321,26 @@ void Pixel_Store::graph() {
         for (auto const& layer : fed.second) {
           for (auto const& chan : layer.second) {
             for (auto const& roc : chan.second) {
-              hChanROC[chan.first]->Fill(roc.first, roc.second.size());
-              hFEDChan->Fill(ch.first, roc.second.size());
+              if (roc.first > 0) {
+                hChanROC[chan.first - 1]->Fill(roc.first, roc.second.size());
+                hFEDChan->Fill(chan.first, roc.second.size());
+              }
             }
           }
         }
       }
     }
   }
+  canvas->Print("histograms.pdf[");
   hFEDChan->Draw();
-  title = "Title:Hits per channel in FED #" + to_string(haFEDID);
+  title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
   canvas->Print("histograms.pdf", title.c_str());
   for (int i = 0; i < 48; i++) {
-    title = "Title:Hits per ROC in channel #" + to_string(i+1);
+    title = "Title:Hits per ROC in channel #" + std::to_string(i + 1);
     hChanROC[i]->Draw();
     canvas->Print("histograms.pdf", title.c_str());
   }
+  canvas->Print("histograms.pdf]");
 }
 
 
