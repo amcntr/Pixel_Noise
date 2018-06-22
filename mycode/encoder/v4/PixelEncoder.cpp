@@ -99,7 +99,7 @@ void Pixel_Store::process() {
 	              int index = (int)ceil((float)ch.first/4.0) - 1;
 	            	if (roc.second.size() > 15)
 			  					rocHigHitpBlock_[index] = true;
-	              if (roc.second.size() > hhROChit) {
+	              if (roc.second.size() > (unsigned int)hhROChit) {
 	                hhROCID.first = ch.first;
 	                hhROCID.second = roc.first;
 	                hhROChit = roc.second.size();
