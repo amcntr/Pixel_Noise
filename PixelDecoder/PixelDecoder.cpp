@@ -11,7 +11,7 @@ void Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
     for(uint32_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
-        storage[chanID][i] += (int)buf;
+        storage[chanID][i + 1] += (int)buf;
     }
 }
 
@@ -21,7 +21,8 @@ void Decoder::decodeRoc64(uint32_t line, int chanID, int count) {
     for(uint64_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
-        storage[chanID][i] += (int)buf;
+        storage[chanID][i + 1] += (int)buf;
+        std::cout<< 
     }
 }
 
@@ -42,46 +43,51 @@ int Decoder::open(std::string filename, int chanMulti) {
         hbuf = headerBuffer << (i * 2);
         hbuf >>= (6);
         header[i] = (int)hbuf;
-        int chanID = 1 + (i * 16 * chanMulti);
+        int chanID = 1 + (i * 4 * chanMulti);
+        cout << "Processing block " << i << ' ';
         switch (header[i]) {
             case 0:
-                std::cout << "Processing Layer 1.\n";
-                for (int j = 0; j < block; j++) {
+                std::cout << "Layer 1.\n";
+                for (int j = 0; j < block / 4; j) {
                     file.read( (char*) &line32, 4);
                     decodeRoc32(line32, chanID, 2);
                     chanID++;
-                    if ( chanID > (16 + (i * 16 * chanMulti)) )
-                        chanID = 1 + (i * 16 * chanMulti);
+                    line32 = 0;
+                    if ( chanID > (4 + (i * 4 * chanMulti)) )
+                        chanID = 1 + (i * 4 * chanMulti);
                 }
                 break;
             case 1:
-                std::cout << "Processing Layer 2.\n";
-                for (int j = 0; j < block; j++) {
+                std::cout << "Layer 2.\n";
+                for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
                     decodeRoc32(line32, chanID, 4);
                     chanID++;
-                    if ( chanID > (16 + (i * 16 * chanMulti)) )
-                        chanID = 1 + (i * 16 * chanMulti);
+                    line32 = 0;
+                    if ( chanID > (4 + (i * 4 * chanMulti)) )
+                        chanID = 1 + (i * 4 * chanMulti);
                 }
                 break;
             case 2:
-                std::cout << "Processing Layer 3-4 and fpix, 32 bit.\n";
-                for (int j = 0; j < block; j++) {
+                std::cout << "Layer 3-4 and fpix, 32 bit.\n";
+                for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
                     decodeRoc32(line32, chanID, 8);
                     chanID++;
-                    if ( chanID > (16 + (i * 16 * chanMulti)) )
-                        chanID = 1 + (i * 16 * chanMulti);
+                    line32 = 0;
+                    if ( chanID > (4 + (i * 4 * chanMulti)) )
+                        chanID = 1 + (i * 4 * chanMulti);
                 }
                 break;
             case 3:
-                std::cout << "Processing Layer 3-4 and fpix, 64 bit.\n";
-                for (int j = 0; j < block; j++) {
+                std::cout << "Layer 3-4 and fpix, 64 bit.\n";
+                for (int j = 0; j < block / 8; j++) {
                     file.read( (char*) &line64, 8);
                     decodeRoc64(line64, chanID, 8);
                     chanID++;
-                    if ( chanID > (16 + (i * 16 * chanMulti)) )
-                        chanID = 1 + (i * 16 * chanMulti);
+                    line64 = 0;
+                    if ( chanID > (4 + (i * 4 * chanMulti)) )
+                        chanID = 1 + (i * 4 * chanMulti);
                 }
                 break;
             default:
