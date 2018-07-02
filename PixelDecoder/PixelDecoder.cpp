@@ -18,7 +18,6 @@ void Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
 void Decoder::decodeRoc64(uint32_t line, int chanID, int count) {
     uint64_t buf = 0;
     uint64_t bits = 64 / count;
-    std::cout<<std::bitset<64>(line)<<'\n';
     for(uint64_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
