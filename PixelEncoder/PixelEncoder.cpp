@@ -22,17 +22,16 @@
 
 #include "PixelEncoder.h"
 
-#include <bitset>
-#include <TROOT.h>
-#include <TPDF.h>
 #include <TCanvas.h>
+#include <TFile.h>
 #include <TH2.h>
 #include <TH2D.h>
-#include <TFile.h>
+#include <TPDF.h>
+#include <TROOT.h>
 #include <TTree.h>
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
-
+#include <bitset>
 
 // checks if pixel is already stored and adds to container
 // for events with zero hits, add layer 0
@@ -57,8 +56,7 @@ int Pixel_Store::add(int event,
     } else
       // duplicate found, return 1
       return 1;
-  }
-  else {
+  } else {
     storage[event][fed][layer][0][0][(uint32_t)0] = (uint32_t)(0);
     return 0;
   }
@@ -71,8 +69,7 @@ bool Pixel_Store::check(int event,
                         int chan,
                         int roc,
                         uint32_t rowcol) {
-  Pixels::iterator pix = 
-      storage[event][fed][layer][chan][roc].find(rowcol);
+  Pixels::iterator pix = storage[event][fed][layer][chan][roc].find(rowcol);
 
   if (pix == storage[event][fed][layer][chan][roc].end())
     return false;
@@ -104,7 +101,7 @@ void Pixel_Store::process() {
           if (lay.first != 0) {
             for (auto const& ch : lay.second) {
               for (auto const& roc : ch.second) {
-                int index = (int)ceil((float)ch.first/16.0) - 1;
+                int index = (int)ceil((float)ch.first / 16.0) - 1;
                 chHits += roc.second.size();
                 if ((roc.second.size() > 15) && (lay.first > 2))
                   rocHigHitpBlock_[index] = true;
@@ -114,7 +111,7 @@ void Pixel_Store::process() {
                   hhROChit = roc.second.size();
                 }
               }
-              if (chHits > hhChanhit){
+              if (chHits > hhChanhit) {
                 hhChanhit = chHits;
                 hhChanID = ch.first;
               }
@@ -127,8 +124,6 @@ void Pixel_Store::process() {
     }
   }
 }
-
-
 
 // outputs 12 binary files of "hits per roc" and pixel addresses
 // for the fed during all events in data file. Half of the files
@@ -158,7 +153,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
   // buffer for hits per roc
   std::unordered_map<int, uint32_t> hits;
   // convert data in map structure to binary format
-  // and place in a buffer for file writing. 
+  // and place in a buffer for file writing.
   for (auto const& evt : storage) {
     for (auto const& fed : evt.second) {
       if (fed.first == targetFED) {
@@ -184,10 +179,10 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
               uint32_t hitBuffer1 = 0;
               uint64_t hitBuffer2 = 0;
               // index for pushing hit binary into hit buffer
-              int index = (int)ceil((float)ch.first/4.0) - 1;
+              int index = (int)ceil((float)ch.first / 4.0) - 1;
               // diiferent layers have differenct # of rocs
               switch (lay.first) {
-                case 1: // layer 1
+                case 1:  // layer 1
                   for (int rc = 1; rc < 3; rc++) {
                     if (hits.count(rc) > 0)
                       hitBuffer1 = (hitBuffer1 << 16 | hits[rc]);
@@ -196,7 +191,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
                   }
                   RocHits32[index].push_back(hitBuffer1);
                   break;
-                case 2: // layer 2
+                case 2:  // layer 2
                   for (int rc = 1; rc < 5; rc++) {
                     if (hits.count(rc) > 0)
                       hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
@@ -207,21 +202,20 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
                     BlockType[index] = 1;
                   RocHits32[index].push_back(hitBuffer1);
                   break;
-                default: // layer 3-4 and fpix
+                default:  // layer 3-4 and fpix
                   if (rocHigHitpBlock_[index / 4]) {
                     for (int rc = 1; rc < 9; rc++) {
                       if (hits.count(rc) > 0) {
                         hitBuffer2 = (hitBuffer2 << 8 | hits[rc]);
                         std::cout << hits[rc] << ' ';
-                      }
-                      else {
+                      } else {
                         hitBuffer2 <<= 8;
                         std::cout << 0 << ' ';
                       }
                     }
                     RocHits64[index].push_back(hitBuffer2);
                     std::cout << hitBuffer2 << ' '
-                      << std::bitset<64>(hitBuffer2) << '\n';
+                              << std::bitset<64>(hitBuffer2) << '\n';
                     BlockType[index] = 3;
                   } else {
                     for (int rc = 1; rc < 9; rc++) {
@@ -244,11 +238,10 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
             for (int layer = 1; layer < 6; layer++) {
               for (int chan = 1; chan < 49; chan++) {
                 if (chpLay_[layer].count(chan) > 0) {
-                  int index = (int)ceil((float)chan/4.0) - 1;
-                  if ((rocHigHitpBlock_[index/4]) && (layer > 2)) {
+                  int index = (int)ceil((float)chan / 4.0) - 1;
+                  if ((rocHigHitpBlock_[index / 4]) && (layer > 2)) {
                     RocHits64[index].push_back((uint64_t)0);
-                  }
-                  else
+                  } else
                     RocHits32[index].push_back((uint32_t)0);
                 }
               }
@@ -258,7 +251,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       }
     }
   }
-  std::cout<<"\nZero Event Count: " << zevCt << '\n';
+  std::cout << "\nZero Event Count: " << zevCt << '\n';
   // begin writing the files
 
   // These files have to be an exact file size.
@@ -281,28 +274,27 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
     glibhit[i].write((char*)&header, 1);
     // write the SRAMhit binary data
     if (rocHigHitpBlock_[i]) {
-        for (int j = 0; j < 4; j++) {
+      for (int j = 0; j < 4; j++) {
+        count = 0;
+        int index = j + (i * 4);
+        for (int k = 0; k < 262144; k++) {
+          if ((unsigned int)count >= RocHits64[index].size())
             count = 0;
-            int index = j + (i * 4);
-            for (int k = 0; k < 262144; k++) {
-                if ((unsigned int)count >= RocHits64[index].size())
-                    count = 0;
-                glibhit[i].write((char*)&RocHits64[index][count], 8);
-                count++;
-            }
+          glibhit[i].write((char*)&RocHits64[index][count], 8);
+          count++;
         }
-    }
-    else {
-        for (int j = 0; j < 4; j++) {
+      }
+    } else {
+      for (int j = 0; j < 4; j++) {
+        count = 0;
+        int index = j + (i * 4);
+        for (int k = 0; k < 524288; k++) {
+          if ((unsigned int)count >= RocHits32[index].size())
             count = 0;
-            int index = j + (i * 4);
-            for (int k = 0; k < 524288; k++) {
-                if ((unsigned int)count >= RocHits32[index].size())
-                    count = 0;
-                glibhit[i].write((char*)&RocHits32[index][count], 4);
-                count++;
-            }
+          glibhit[i].write((char*)&RocHits32[index][count], 4);
+          count++;
         }
+      }
     }
     // write the SRAMpix files
     count = 0;
@@ -319,16 +311,20 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
 }
 
 void Pixel_Store::graph() {
-  TCanvas *canvas = new TCanvas("canvas");
+  TCanvas* canvas = new TCanvas("canvas");
   TH2D *hChanROC[48], *hFEDChan;
-  std::string title = "Hits in FED #" + std::to_string(haFEDID) + " in Each Channel;Channel;Number of Hits";
+  std::string title = "Hits in FED #" + std::to_string(haFEDID) +
+                      " in Each Channel;Channel;Number of Hits";
   std::string name = "hChanFED" + std::to_string(haFEDID);
-  hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49., (hhChanhit + 10), -0.5, ((float)hhChanhit + 9.5));
+  hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
+                      (hhChanhit + 10), -0.5, ((float)hhChanhit + 9.5));
   hFEDChan->SetOption("COLZ");
   for (int i = 0; i < 48; i++) {
-    title = "Hits per ROC in Channel #" + std::to_string(i + 1) + ";ROC;Number of Hits";
+    title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
+            ";ROC;Number of Hits";
     name = "hROCChan" + std::to_string(i + 1);
-    hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9., (hhROChit + 10), -0.5, ((float)hhROChit + 9.5));
+    hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
+                           (hhROChit + 10), -0.5, ((float)hhROChit + 9.5));
     hChanROC[i]->SetOption("COLZ");
   }
   int chanHits = 0;
@@ -362,7 +358,6 @@ void Pixel_Store::graph() {
   canvas->Print("histograms.pdf]");
 }
 
-
 int main(int argc, char* argv[]) {
   // clock to record process time
   clock_t t1, t2, st1, st2, et1, et2;
@@ -371,17 +366,17 @@ int main(int argc, char* argv[]) {
     std::cout << "usage: " << argv[0] << " <filename>\n";
     return 1;
   }
-  
+
   TFile* file = new TFile(argv[1]);
   // check if file loaded correctly
-  if ( !(file->IsOpen()) ) {
+  if (!(file->IsOpen())) {
     std::cout << "Couln't open file.\n";
     return 1;
   }
 
   t1 = clock();
   std::cout << "Program start.\n";
-  
+
   // decode data from TTree
   TTreeReader readerH("HighFedData", file);
   TTreeReaderValue<int> event(readerH, "Data._eventID");
@@ -410,7 +405,8 @@ int main(int argc, char* argv[]) {
   int duplicates = 0;
   // loop through TTree and store data in Pixel_Store
   while (readerH.Next()) {
-    duplicates += pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
+    duplicates +=
+        pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
   }
   while (readerZ.Next()) {
     duplicates += pStore.add(*event0, *fed0, *layer0, 0, 0, 0, 0, 0);
@@ -433,9 +429,11 @@ int main(int argc, char* argv[]) {
            "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
            "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit) +
            "\n\nRoc with highest hits for single event in FED: ch " +
-           std::to_string(pStore.hhROCID.first) + " roc " + std::to_string(pStore.hhROCID.second) +
+           std::to_string(pStore.hhROCID.first) + " roc " +
+           std::to_string(pStore.hhROCID.second) +
            "\nWith a hit count of: " + std::to_string(pStore.hhROChit) +
-           "\n\nChannel with Highest hits is: Channel " + std::to_string(pStore.hhChanID) +
+           "\n\nChannel with Highest hits is: Channel " +
+           std::to_string(pStore.hhChanID) +
            "\nWith a hit count of: " + std::to_string(pStore.hhChanhit);
 
   std::cout << output;   // print to terminal
@@ -455,7 +453,8 @@ int main(int argc, char* argv[]) {
   // output process time in seconds
   t2 = clock();
   float seconds = ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
-  std::cout << "\n\nProgram finish with a runtime of " << seconds << " seconds.\n\n";
+  std::cout << "\n\nProgram finish with a runtime of " << seconds
+            << " seconds.\n\n";
 
   return 1;
 }

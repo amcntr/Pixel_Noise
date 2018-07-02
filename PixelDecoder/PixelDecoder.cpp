@@ -109,10 +109,19 @@ void Decoder::graph(std::string filename) {
 int main(int argc, char* argv[]) {
     clock_t t1, t2;
     t1 = clock();
+    if (argc != 2) {  // if no arguments
+        std::cout << "usage: " << argv[0] << " <filename>\n";
+        return 1;
+    }
+    std::string path = argv[1];
     Decoder decode;
     int error;
-    if (decode.open("SRAMhit0.bin", 1) != 1)
+    if (decode.open((path + "SRAMhit0.bin"), 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
+    if (decode.open((path + "SRAMhit1.bin"), 1) != 1)
+        std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
+    if (decode.open((path + "SRAMhit2.bin"), 1) != 1)
+        std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
     decode.graph("");
 
