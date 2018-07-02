@@ -31,12 +31,6 @@ int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
 }
 
 int Decoder::open(std::string filename, int chanBase) {
-    TCanvas* canvas = new TCanvas("canvas");
-    TH2D *hFEDChan;
-    std::string title = "Hits per Channel;Channel;Number of Hits";
-    hFEDChan = new TH2D("hChanFED", title.c_str(), 48, 1., 49., 600, -0.5, 599.5);
-    hFEDChan->SetOption("COLZ");
-
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
     if ((int)file.tellg() != 8388609)
         return 0;
@@ -60,7 +54,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 1.\n";
                 for (int j = 0; j < block / 4; j) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan->Fill(chanID, decodeRoc32(line32, chanID, 2));
+                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 2));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -71,7 +65,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 2.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan->Fill(chanID, decodeRoc32(line32, chanID, 4));
+                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -82,7 +76,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 3-4 and fpix, 32 bit.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan->Fill(chanID, decodeRoc32(line32, chanID, 8));
+                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 8));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -93,7 +87,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 3-4 and fpix, 64 bit.\n";
                 for (int j = 0; j < block / 8; j++) {
                     file.read( (char*) &line64, 8);
-                    hFEDChan->Fill(chanID, decodeRoc64(line64, chanID, 8));
+                    hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
                     chanID++;
                     line64 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -104,8 +98,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout<<"Error: Incorrect header format.\n";
         }
     }
-    hFEDChan->Draw();
-    canvas->Print("HitsPerChannel.pdf");
     file.close();
     return 1;
 }
@@ -123,6 +115,9 @@ void Decoder::process() {
                 << ": " << roc.second << '\n';
         }
     }
+    TCanvas* canvas = new TCanvas("canvas");
+    hFEDChan.Draw();
+    canvas->Print("HitsPerChannel.pdf");
 }
 
 int main(int argc, char* argv[]) {

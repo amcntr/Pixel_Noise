@@ -23,8 +23,9 @@ using Channels = std::map<int, ROCs>;
 class Decoder {
 private:
     Channels storage;
+    TH2D hFEDChan("hChanFED", "Hits per Channel;Channel;Number of Hits", 48, 1., 49., 600, -0.5, 599.5);
 public:
-    Decoder() { }
+    Decoder() { hFEDChan.SetOption("COLZ"); }
     virtual ~Decoder() { }
     int open(std::string file, int chanBase);
     int decodeRoc32(uint32_t line, int chanID, int count);
