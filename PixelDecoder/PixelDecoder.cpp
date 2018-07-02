@@ -34,7 +34,7 @@ int Decoder::open(std::string filename, int chanBase) {
     TCanvas* canvas = new TCanvas("canvas");
     TH2D *hFEDChan;
     std::string title = "Hits per Channel;Channel;Number of Hits";
-    hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49., 600, -0.5, 599.5);
+    hFEDChan = new TH2D("hChanFED", title.c_str(), 48, 1., 49., 600, -0.5, 599.5);
     hFEDChan->SetOption("COLZ");
 
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
