@@ -5,7 +5,7 @@
 #include "PixelDecoder.h"
 
 std::vector<uint32_t> Decoder::decodeRoc(uint32_t line, int count) {
-    std::map<int, uint32_t> RocHits;
+    std::vector<uint32_t> RocHits;
     uint32_t buf = 0;
     uint32_t bits = 32 / count;
 
@@ -17,7 +17,7 @@ std::vector<uint32_t> Decoder::decodeRoc(uint32_t line, int count) {
     return RocHits;
 }
 
-void Decoder::process(std::string filename) {
+void Decoder::open(std::string filename) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in);
     uint32_t headerBuffer;
     uint32_t header[4];
