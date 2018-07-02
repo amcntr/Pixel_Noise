@@ -22,7 +22,6 @@ void Decoder::decodeRoc64(uint32_t line, int chanID, int count) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
         storage[chanID][i + 1] += (int)buf;
-        std::cout<< 
     }
 }
 
