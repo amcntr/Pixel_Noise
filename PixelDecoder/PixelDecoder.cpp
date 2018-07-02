@@ -22,6 +22,7 @@ void Decoder::decodeRoc64(uint32_t line, int chanID, int count) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
         storage[chanID][i + 1] += (int)buf;
+        std::cout<<(int)buf<<' ';
     }
 }
 
@@ -88,6 +89,7 @@ int Decoder::open(std::string filename, int chanMulti) {
                     if ( chanID > (4 + (i * 4 * chanMulti)) )
                         chanID = 1 + (i * 4 * chanMulti);
                 }
+                std::cout<<'\n';
                 break;
             default:
                 std::cout<<"Error: Incorrect header format.\n";
@@ -122,9 +124,9 @@ int main(int argc, char* argv[]) {
     int error;
     if (decode.open((path + "SRAMhit0.bin"), 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
-    if (decode.open((path + "SRAMhit1.bin"), 1) != 1)
+    if (decode.open((path + "SRAMhit1.bin"), 2) != 1)
         std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
-    if (decode.open((path + "SRAMhit2.bin"), 1) != 1)
+    if (decode.open((path + "SRAMhit2.bin"), 3) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
     decode.graph("");
