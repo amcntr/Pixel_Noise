@@ -31,7 +31,6 @@
 #include <TTree.h>
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
-#include <bitset>
 
 // checks if pixel is already stored and adds to container
 // for events with zero hits, add layer 0
@@ -214,8 +213,6 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
                       }
                     }
                     RocHits64[index].push_back(hitBuffer2);
-                    std::cout << hitBuffer2 << ' '
-                              << std::bitset<64>(hitBuffer2) << '\n';
                     BlockType[index] = 3;
                   } else {
                     for (int rc = 1; rc < 9; rc++) {

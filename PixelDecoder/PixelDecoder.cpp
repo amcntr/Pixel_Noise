@@ -4,28 +4,39 @@
 
 #include "PixelDecoder.h"
 
-void Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
+int Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
+    int hits = 0;
     uint32_t buf = 0;
     uint32_t bits = 32 / count;
-
     for(uint32_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
         storage[chanID][i + 1] += (int)buf;
+        hits += (int)buf;
     }
+    return hits;
 }
 
-void Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
+int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
+    int hits = 0;
     uint64_t buf = 0;
     uint64_t bits = 64 / count;
     for(uint64_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
         storage[chanID][i + 1] += (int)buf;
+        hits += (int)buf;
     }
+    return hits;
 }
 
 int Decoder::open(std::string filename, int chanBase) {
+    TCanvas* canvas = new TCanvas("canvas");
+    TH2D *hFEDChan;
+    std::string title = "Hits per Channel;Channel;Number of Hits";
+    hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49., 600, -0.5, 599.5);
+    hFEDChan->SetOption("COLZ");
+
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
     if ((int)file.tellg() != 8388609)
         return 0;
@@ -49,7 +60,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 1.\n";
                 for (int j = 0; j < block / 4; j) {
                     file.read( (char*) &line32, 4);
-                    decodeRoc32(line32, chanID, 2);
+                    hFEDChan->fill(chanID, decodeRoc32(line32, chanID, 2));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -60,7 +71,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 2.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    decodeRoc32(line32, chanID, 4);
+                    hFEDChan->fill(chanID, decodeRoc32(line32, chanID, 4));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -71,7 +82,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 3-4 and fpix, 32 bit.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    decodeRoc32(line32, chanID, 8);
+                    hFEDChan->fill(chanID, decodeRoc32(line32, chanID, 8));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -82,7 +93,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 3-4 and fpix, 64 bit.\n";
                 for (int j = 0; j < block / 8; j++) {
                     file.read( (char*) &line64, 8);
-                    decodeRoc64(line64, chanID, 8);
+                    hFEDChan->fill(chanID, decodeRoc64(line64, chanID, 8));
                     chanID++;
                     line64 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -93,16 +104,20 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout<<"Error: Incorrect header format.\n";
         }
     }
+    hFEDChan->Draw();
+    canvas->Print("HitsPerChannel.pdf");
     file.close();
     return 1;
 }
 
-void Decoder::graph(std::string filename) {
+void Decoder::process() {
     int size = storage.size();
+    int hits;
     std::cout << "Number of Channels: " << size << '\n';
     for (auto const& chan : storage) {
         std::cout<<"Number of ROCs in channel " << chan.first
             << ": " << chan.second.size() << '\n';
+        hits = 0;
         for (auto const& roc : chan.second) {
             std::cout<<"\tHits in ROC " << roc.first
                 << ": " << roc.second << '\n';
@@ -130,7 +145,7 @@ int main(int argc, char* argv[]) {
     if (decode.open((path + "SRAMhit2.bin"), 33) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
-    decode.graph("");
+    decode.process();
 
     t2 = clock();
     float seconds = ((float)t2 - (float)t1) / CLOCKS_PER_SEC;

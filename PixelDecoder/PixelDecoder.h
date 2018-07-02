@@ -12,6 +12,10 @@
 #include <vector>
 #include <string>
 #include <bitset>
+#include <TCanvas.h>
+#include <TH2.h>
+#include <TH2D.h>
+#include <TPDF.h>
 
 using ROCs = std::map<int, int>;
 using Channels = std::map<int, ROCs>;
@@ -23,9 +27,9 @@ public:
     Decoder() { }
     virtual ~Decoder() { }
     int open(std::string file, int chanBase);
-    void decodeRoc32(uint32_t line, int chanID, int count);
-    void decodeRoc64(uint64_t line, int chanID, int count);
-    void graph(std::string file);
+    int decodeRoc32(uint32_t line, int chanID, int count);
+    int decodeRoc64(uint64_t line, int chanID, int count);
+    void process();
 };
 
 #endif
