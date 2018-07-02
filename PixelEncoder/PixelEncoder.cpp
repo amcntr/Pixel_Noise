@@ -140,7 +140,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
   // These are buffers for writing the data to files
   // 1 for each block of the hit files. 4 blocks per file.
   std::vector<uint32_t> RocHits32[12];
-  std::vector<uint64_t> RocHits64[12]
+  std::vector<uint64_t> RocHits64[12];
   // For the header file of the SRAMhit files
   // indicates the binary format used
   // 2 bits per block
