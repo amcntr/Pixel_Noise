@@ -25,7 +25,8 @@ private:
 public:
     Decoder() { }
     virtual ~Decoder() { }
-    void process(std::string file);
+    void open(std::string file);
+    std::vector<uint32_t> decodeRoc(uint32_t line, int count);
     void graph(std::string file);
 };
 
