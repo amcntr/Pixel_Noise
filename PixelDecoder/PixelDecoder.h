@@ -23,7 +23,7 @@ using Channels = std::map<int, ROCs>;
 class Decoder {
 private:
     Channels storage;
-    TH2D hFEDChan = TH2D("hChanFED", "Hits per Channel;Channel;Number of Hits", 48, 1., 49., 300, -0.5, 599.5);
+    TH2D hFEDChan = TH2D("hChanFED", "Hits per Channel;Channel;Number of Hits", 48, 1., 49., 300, -0.5, 299.5);
 public:
     Decoder() { hFEDChan.SetOption("COLZ"); }
     virtual ~Decoder() { }
