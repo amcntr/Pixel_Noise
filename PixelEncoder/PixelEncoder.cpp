@@ -208,13 +208,19 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
                   break;
                 default: // layer 3-4 and fpix
                   if (rocHigHitpBlock_[index / 4]) {
-                    for (int rc = 1; rc < 8; rc++) {
-                      if (hits.count(rc) > 0)
+                    for (int rc = 1; rc < 9; rc++) {
+                      if (hits.count(rc) > 0) {
                         hitBuffer2 = (hitBuffer2 << 8 | hits[rc]);
-                      else
+                        std::cout << hits[rc] << ' ';
+                      }
+                      else {
                         hitBuffer2 <<= 8;
+                        std::cout << 0 << ' ';
+                      }
                     }
                     RocHits64[index].push_back(hitBuffer2);
+                    std::cout << hitBuffer2 << ' '
+                      << std::bitset<64>(hitBuffer2) << '\n';
                     BlockType[index] = 3;
                   } else {
                     for (int rc = 1; rc < 9; rc++) {
