@@ -22,6 +22,7 @@
 
 #include "PixelEncoder.h"
 
+#include <bitset>
 #include <TROOT.h>
 #include <TPDF.h>
 #include <TCanvas.h>
