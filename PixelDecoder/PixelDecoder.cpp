@@ -44,7 +44,7 @@ int Decoder::open(std::string filename, int chanMulti) {
         hbuf >>= (6);
         header[i] = (int)hbuf;
         int chanID = 1 + (i * 4 * chanMulti);
-        cout << "Processing block " << i << ' ';
+        std::cout << "Processing block " << i << ' ';
         switch (header[i]) {
             case 0:
                 std::cout << "Layer 1.\n";
