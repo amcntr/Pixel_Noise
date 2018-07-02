@@ -15,14 +15,13 @@ void Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
     }
 }
 
-void Decoder::decodeRoc64(uint32_t line, int chanID, int count) {
+void Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
     uint64_t buf = 0;
     uint64_t bits = 64 / count;
     for(uint64_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
         storage[chanID][i + 1] += (int)buf;
-        std::cout<<(int)buf<<' ';
     }
 }
 
@@ -89,7 +88,6 @@ int Decoder::open(std::string filename, int chanMulti) {
                     if ( chanID > (4 + (i * 4 * chanMulti)) )
                         chanID = 1 + (i * 4 * chanMulti);
                 }
-                std::cout<<'\n';
                 break;
             default:
                 std::cout<<"Error: Incorrect header format.\n";
@@ -122,10 +120,13 @@ int main(int argc, char* argv[]) {
     std::string path = argv[1];
     Decoder decode;
     int error;
+    std::cout<<"Opening file SRAMhit0.bin\n";
     if (decode.open((path + "SRAMhit0.bin"), 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
+    std::cout<<"Opening file SRAMhit1.bin\n";
     if (decode.open((path + "SRAMhit1.bin"), 2) != 1)
         std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
+    std::cout<<"Opening file SRAMhit2.bin\n";
     if (decode.open((path + "SRAMhit2.bin"), 3) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
