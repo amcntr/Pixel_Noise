@@ -60,7 +60,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 1.\n";
                 for (int j = 0; j < block / 4; j) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan->fill(chanID, decodeRoc32(line32, chanID, 2));
+                    hFEDChan->Fill(chanID, decodeRoc32(line32, chanID, 2));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -71,7 +71,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 2.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan->fill(chanID, decodeRoc32(line32, chanID, 4));
+                    hFEDChan->Fill(chanID, decodeRoc32(line32, chanID, 4));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -82,7 +82,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 3-4 and fpix, 32 bit.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan->fill(chanID, decodeRoc32(line32, chanID, 8));
+                    hFEDChan->Fill(chanID, decodeRoc32(line32, chanID, 8));
                     chanID++;
                     line32 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
@@ -93,7 +93,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 std::cout << "Layer 3-4 and fpix, 64 bit.\n";
                 for (int j = 0; j < block / 8; j++) {
                     file.read( (char*) &line64, 8);
-                    hFEDChan->fill(chanID, decodeRoc64(line64, chanID, 8));
+                    hFEDChan->Fill(chanID, decodeRoc64(line64, chanID, 8));
                     chanID++;
                     line64 = 0;
                     if ( chanID > ((chanBase + 3) + (i * 4)) )
