@@ -277,7 +277,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         for (int j = 0; j < 4; j++) {
             count = 0;
             int index = j + (i * 4);
-            for (int k = 0; k < 524288; k++) {
+            for (int k = 0; k < 262144; k++) {
                 if ((unsigned int)count >= RocHits64[index].size())
                     count = 0;
                 glibhit[i].write((char*)&RocHits64[index][count], 8);
