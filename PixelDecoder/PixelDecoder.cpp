@@ -35,6 +35,6 @@ void Decoder::graph(std::string filename) {
 
 int main(int argc, char* argv[]) {
     Decoder decode;
-    decode.process("SRAMhit0.bin");
+    decode.open("SRAMhit0.bin");
     return 1;
 }
