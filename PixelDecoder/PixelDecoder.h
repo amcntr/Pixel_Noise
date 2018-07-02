@@ -22,7 +22,7 @@ private:
 public:
     Decoder() { }
     virtual ~Decoder() { }
-    int open(std::string file, int chanMulti);
+    int open(std::string file, int chanBase);
     void decodeRoc32(uint32_t line, int chanID, int count);
     void decodeRoc64(uint64_t line, int chanID, int count);
     void graph(std::string file);

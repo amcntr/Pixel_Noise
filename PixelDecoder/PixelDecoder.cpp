@@ -25,7 +25,7 @@ void Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
     }
 }
 
-int Decoder::open(std::string filename, int chanMulti) {
+int Decoder::open(std::string filename, int chanBase) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
     if ((int)file.tellg() != 8388609)
         return 0;
@@ -42,7 +42,7 @@ int Decoder::open(std::string filename, int chanMulti) {
         hbuf = headerBuffer << (i * 2);
         hbuf >>= (6);
         header[i] = (int)hbuf;
-        int chanID = 1 + (i * 4 * chanMulti);
+        int chanID = chanBase + (i * 4);
         std::cout << "Processing block " << i << ' ';
         switch (header[i]) {
             case 0:
@@ -52,8 +52,8 @@ int Decoder::open(std::string filename, int chanMulti) {
                     decodeRoc32(line32, chanID, 2);
                     chanID++;
                     line32 = 0;
-                    if ( chanID > (4 + (i * 4 * chanMulti)) )
-                        chanID = 1 + (i * 4 * chanMulti);
+                    if ( chanID > ((chanBase + 3) + (i * 4)) )
+                        chanID = chanBase + (i * 4);
                 }
                 break;
             case 1:
@@ -63,8 +63,8 @@ int Decoder::open(std::string filename, int chanMulti) {
                     decodeRoc32(line32, chanID, 4);
                     chanID++;
                     line32 = 0;
-                    if ( chanID > (4 + (i * 4 * chanMulti)) )
-                        chanID = 1 + (i * 4 * chanMulti);
+                    if ( chanID > ((chanBase + 3) + (i * 4)) )
+                        chanID = chanBase + (i * 4);
                 }
                 break;
             case 2:
@@ -74,8 +74,8 @@ int Decoder::open(std::string filename, int chanMulti) {
                     decodeRoc32(line32, chanID, 8);
                     chanID++;
                     line32 = 0;
-                    if ( chanID > (4 + (i * 4 * chanMulti)) )
-                        chanID = 1 + (i * 4 * chanMulti);
+                    if ( chanID > ((chanBase + 3) + (i * 4)) )
+                        chanID = chanBase + (i * 4);
                 }
                 break;
             case 3:
@@ -85,8 +85,8 @@ int Decoder::open(std::string filename, int chanMulti) {
                     decodeRoc64(line64, chanID, 8);
                     chanID++;
                     line64 = 0;
-                    if ( chanID > (4 + (i * 4 * chanMulti)) )
-                        chanID = 1 + (i * 4 * chanMulti);
+                    if ( chanID > ((chanBase + 3) + (i * 4)) )
+                        chanID = chanBase + (i * 4);
                 }
                 break;
             default:
@@ -124,10 +124,10 @@ int main(int argc, char* argv[]) {
     if (decode.open((path + "SRAMhit0.bin"), 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
     std::cout<<"Opening file SRAMhit1.bin\n";
-    if (decode.open((path + "SRAMhit1.bin"), 2) != 1)
+    if (decode.open((path + "SRAMhit1.bin"), 17) != 1)
         std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
     std::cout<<"Opening file SRAMhit2.bin\n";
-    if (decode.open((path + "SRAMhit2.bin"), 3) != 1)
+    if (decode.open((path + "SRAMhit2.bin"), 33) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
     decode.graph("");
