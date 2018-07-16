@@ -49,6 +49,11 @@ class Pixel_Store {
   // < layer id, < channel id, occurrences > >
   std::map<int, std::map<int, int> > chpLay_;
  public:
+  // highest hits roc hits
+  // number of hits in above roc 
+  int hhROChit; // highest hits roc number of hits
+  // highest number of hits in a single channel
+  int hhChanhit;
   // highest average fed id
   // highest avg hit per event fed id
   int haFEDID;

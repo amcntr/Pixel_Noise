@@ -79,6 +79,9 @@ bool Pixel_Store::check(int event,
 void Pixel_Store::process() {
   haFEDhit = 0;
   totalHits = 0;
+  hhChanhit = 0;
+  hhROChit = 0;
+  int Chhit = 0;
   totalEvents = storage.size();
   totalFEDs = hitspFED_.size();
   // for FEDID in "hits per fed" map
@@ -100,7 +103,12 @@ void Pixel_Store::process() {
                 int index = (int)ceil((float)ch.first / 16.0) - 1;
                 if ((roc.second.size() > 15) && (lay.first > 2))
                   rocHigHitpBlock_[index] = true;
+                if (roc.second.size() > hhROChit):
+                  hhROChit = roc.second.size();
+                Chhit += roc.second.size();
               }
+              if (Chhit > hhChanhit):
+                hhChanhit = Chhit;
               chpLay_[lay.first][ch.first] += 1;
             }
           }
@@ -259,7 +267,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         int index = j + (i * 4);
         for (int k = 0; k < 262144; k++) {
           if ((unsigned int)count >= RocHits64[index].size())
-            std::cout<<""
+            std::cout<<k<<"\n";
             count = 0;
           glibhit[i].write((char*)&RocHits64[index][count], 8);
           count++;
@@ -298,14 +306,14 @@ void Pixel_Store::graph() {
                       " in Each Channel;Channel;Number of Hits";
   std::string name = "hChanFED" + std::to_string(haFEDID);
   hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
-                      (hhChanhit + 10), -0.5, ((float)hhChanhit + 9.5));
+                      ((float)hhChanhit + ((float)hhChanhit * 0.25)), -0.5, ((float)hhChanhit + ((float)hhChanhit * 0.25) - 0.5));
   hFEDChan->SetOption("COLZ");
   for (int i = 0; i < 48; i++) {
     title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
             ";ROC;Number of Hits";
     name = "hROCChan" + std::to_string(i + 1);
     hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
-                           (hhROChit + 10), -0.5, ((float)hhROChit + 9.5));
+                           ((float)hhROChit + ((float)hhROChit * 0.25)), -0.5, ((float)hhROChit + ((float)hhROChit * 0.25) - 0.5));
     hChanROC[i]->SetOption("COLZ");
   }
   int chanHits = 0;
