@@ -103,11 +103,11 @@ void Pixel_Store::process() {
                 int index = (int)ceil((float)ch.first / 16.0) - 1;
                 if ((roc.second.size() > 15) && (lay.first > 2))
                   rocHigHitpBlock_[index] = true;
-                if (roc.second.size() > hhROChit):
+                if (roc.second.size() > hhROChit)
                   hhROChit = roc.second.size();
                 Chhit += roc.second.size();
               }
-              if (Chhit > hhChanhit):
+              if (Chhit > hhChanhit)
                 hhChanhit = Chhit;
               chpLay_[lay.first][ch.first] += 1;
             }
