@@ -77,11 +77,8 @@ bool Pixel_Store::check(int event,
 }
 
 void Pixel_Store::process() {
-  hhROChit = 0;
   haFEDhit = 0;
-  hhChanhit = 0;
   totalHits = 0;
-  int chHits = 0;
   totalEvents = storage.size();
   totalFEDs = hitspFED_.size();
   // for FEDID in "hits per fed" map
@@ -101,20 +98,9 @@ void Pixel_Store::process() {
             for (auto const& ch : lay.second) {
               for (auto const& roc : ch.second) {
                 int index = (int)ceil((float)ch.first / 16.0) - 1;
-                chHits += roc.second.size();
                 if ((roc.second.size() > 15) && (lay.first > 2))
                   rocHigHitpBlock_[index] = true;
-                if (roc.second.size() > (unsigned int)hhROChit) {
-                  hhROCID.first = ch.first;
-                  hhROCID.second = roc.first;
-                  hhROChit = roc.second.size();
-                }
               }
-              if (chHits > hhChanhit) {
-                hhChanhit = chHits;
-                hhChanID = ch.first;
-              }
-              chHits = 0;
               chpLay_[lay.first][ch.first] += 1;
             }
           }
@@ -233,9 +219,9 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
               for (int chan = 1; chan < 49; chan++) {
                 if (chpLay_[layer].count(chan) > 0) {
                   int index = (int)ceil((float)chan / 4.0) - 1;
-                  if ((rocHigHitpBlock_[index / 4]) && (layer > 2)) {
+                  if ((rocHigHitpBlock_[index / 4]) && (layer > 2))
                     RocHits64[index].push_back((uint64_t)0);
-                  } else
+                  else
                     RocHits32[index].push_back((uint32_t)0);
                 }
               }
@@ -273,6 +259,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         int index = j + (i * 4);
         for (int k = 0; k < 262144; k++) {
           if ((unsigned int)count >= RocHits64[index].size())
+            std::cout<<""
             count = 0;
           glibhit[i].write((char*)&RocHits64[index][count], 8);
           count++;
@@ -326,15 +313,25 @@ void Pixel_Store::graph() {
     for (auto const& fed : event.second) {
       if (fed.first == haFEDID) {
         for (auto const& layer : fed.second) {
-          for (auto const& chan : layer.second) {
-            for (auto const& roc : chan.second) {
-              if (roc.first > 0) {
-                hChanROC[chan.first - 1]->Fill(roc.first, roc.second.size());
+          if (layer.first > 0) {
+            for (auto const& chan : layer.second) {
+              for (auto const& roc : chan.second) {
+                if (roc.first > 0) {
+                  hChanROC[chan.first - 1]->Fill(roc.first, roc.second.size());
+                }
+                chanHits += roc.second.size();
               }
-              chanHits += roc.second.size();
+              hFEDChan->Fill(chan.first, chanHits);
+              chanHits = 0;
             }
-            hFEDChan->Fill(chan.first, chanHits);
-            chanHits = 0;
+          } else {
+            for (int lay = 1; lay < 6; lay++) {
+              for (int ch = 1; ch < 49; ch ++) {
+                if (chpLay_[lay].count(ch) > 0) {
+                  hFEDChan->Fill(ch, 0);
+                }
+              }
+            }
           }
         }
       }
@@ -421,14 +418,7 @@ int main(int argc, char* argv[]) {
            "\nTotal hits: " + std::to_string(pStore.totalHits) +
            "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
            "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
-           "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit) +
-           "\n\nRoc with highest hits for single event in FED: ch " +
-           std::to_string(pStore.hhROCID.first) + " roc " +
-           std::to_string(pStore.hhROCID.second) +
-           "\nWith a hit count of: " + std::to_string(pStore.hhROChit) +
-           "\n\nChannel with Highest hits is: Channel " +
-           std::to_string(pStore.hhChanID) +
-           "\nWith a hit count of: " + std::to_string(pStore.hhChanhit);
+           "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
 
   std::cout << output;   // print to terminal
   outputFile << output;  // print to file

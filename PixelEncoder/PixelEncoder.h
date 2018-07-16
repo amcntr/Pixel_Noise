@@ -40,24 +40,15 @@ class Pixel_Store {
  private:
   // hits per fed
   // map of total hits per fed
-  std::unordered_map<int, int> hitspFED_;
-  // roc high hits per block
+  std::unordered_map<int, int> hitspFED_; // hits per fed
+  // roc highest hits per block
   // id: block id in hits files
   // value: if a roc in block has irregularly high hits
   bool rocHigHitpBlock_[3] = {false};
   // channel id occurrences per layer
+  // < layer id, < channel id, occurrences > >
   std::map<int, std::map<int, int> > chpLay_;
  public:
-  // highest hits roc id
-  // ch, roc of roc with highest hits
-  std::pair<int, int> hhROCID;
-  // highest hits roc hits
-  // number of hits in above roc 
-  int hhROChit;
-  // Channel with highest hits
-  int hhChanID;
-  // highest number of hits in a single channel
-  int hhChanhit;
   // highest average fed id
   // highest avg hit per event fed id
   int haFEDID;
