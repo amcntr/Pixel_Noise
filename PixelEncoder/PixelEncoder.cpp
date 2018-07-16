@@ -109,6 +109,7 @@ void Pixel_Store::process() {
               }
               if (Chhit > hhChanhit)
                 hhChanhit = Chhit;
+              Chhit = 0;
               chpLay_[lay.first][ch.first] += 1;
             }
           }
@@ -260,6 +261,8 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       header = (header << 2 | BlockType[index]);
     }
     glibhit[i].write((char*)&header, 1);
+    int last = 0;
+    int left = 0;
     // write the SRAMhit binary data
     if (rocHigHitpBlock_[i]) {
       for (int j = 0; j < 4; j++) {
@@ -267,12 +270,17 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         int index = j + (i * 4);
         for (int k = 0; k < 262144; k++) {
           if ((unsigned int)count >= RocHits64[index].size()) {
-            std::cout << "64bit: " << k << "\n";
+            last = k;
+            left = RocHits64[index].size();
             count = 0;
           }
           glibhit[i].write((char*)&RocHits64[index][count], 8);
           count++;
         }
+        std::cout << "SRAMhit" << i << " 64 bit Block" << j
+                  << "\tLast Index: " << last
+                  << "\tSize left: " << left << '\n'
+                  << "\tLast Count: " << count << '\n';
       }
     } else {
       for (int j = 0; j < 4; j++) {
@@ -280,12 +288,17 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         int index = j + (i * 4);
         for (int k = 0; k < 524288; k++) {
           if ((unsigned int)count >= RocHits32[index].size()) {
-            std::cout << "32bit: " << k << "\n";
+            last = k;
+            left = RocHits32[index].size();
             count = 0;
           }
           glibhit[i].write((char*)&RocHits32[index][count], 4);
           count++;
         }
+        std::cout << "SRAMhit" << i << " 32 bit Block" << j
+                  << "\tLast Index: " << last
+                  << "\tSize left: " << left
+                  << "\tLast Count: " << count << '\n';
       }
     }
     // write the SRAMpix files
@@ -431,7 +444,6 @@ int main(int argc, char* argv[]) {
            "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
            "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
 
-  std::cout << output;   // print to terminal
   outputFile << output;  // print to file
 
   et1 = clock();
@@ -444,6 +456,8 @@ int main(int argc, char* argv[]) {
   pStore.graph();
   std::cout << "Done generating histograms.";
   file->Close();
+
+  std::cout << output;   // print to terminal
 
   // output process time in seconds
   t2 = clock();
