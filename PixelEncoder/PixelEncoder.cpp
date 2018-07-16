@@ -270,16 +270,14 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         int index = j + (i * 4);
         for (int k = 0; k < 262144; k++) {
           if ((unsigned int)count >= RocHits64[index].size()) {
-            last = k;
             left = RocHits64[index].size();
             count = 0;
           }
           glibhit[i].write((char*)&RocHits64[index][count], 8);
           count++;
         }
-        std::cout << "SRAMhit" << i << " 64 bit Block" << j
-                  << "\tLast Index: " << last
-                  << "\tSize left: " << left << '\n'
+        std::cout << "SRAMhit" << i << " 64-bit Block" << j
+                  << "\tSize left: " << left
                   << "\tLast Count: " << count << '\n';
       }
     } else {
@@ -288,15 +286,13 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         int index = j + (i * 4);
         for (int k = 0; k < 524288; k++) {
           if ((unsigned int)count >= RocHits32[index].size()) {
-            last = k;
             left = RocHits32[index].size();
             count = 0;
           }
           glibhit[i].write((char*)&RocHits32[index][count], 4);
           count++;
         }
-        std::cout << "SRAMhit" << i << " 32 bit Block" << j
-                  << "\tLast Index: " << last
+        std::cout << "SRAMhit" << i << " 32-bit Block" << j
                   << "\tSize left: " << left
                   << "\tLast Count: " << count << '\n';
       }
@@ -322,14 +318,14 @@ void Pixel_Store::graph() {
                       " in Each Channel;Channel;Number of Hits";
   std::string name = "hChanFED" + std::to_string(haFEDID);
   hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
-                      ((float)hhChanhit + ((float)hhChanhit * 0.25)), -0.5, ((float)hhChanhit + ((float)hhChanhit * 0.25) - 0.5));
+                      ((float)hhChanhit + ((float)hhChanhit * 0.3)), -0.5, ((float)hhChanhit + ((float)hhChanhit * 0.3) - 0.5));
   hFEDChan->SetOption("COLZ");
   for (int i = 0; i < 48; i++) {
     title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
             ";ROC;Number of Hits";
     name = "hROCChan" + std::to_string(i + 1);
     hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
-                           ((float)hhROChit + ((float)hhROChit * 0.25)), -0.5, ((float)hhROChit + ((float)hhROChit * 0.25) - 0.5));
+                           ((float)hhROChit + ((float)hhROChit * 0.3)), -0.5, ((float)hhROChit + ((float)hhROChit * 0.3) - 0.5));
     hChanROC[i]->SetOption("COLZ");
   }
   int chanHits = 0;
@@ -430,7 +426,7 @@ int main(int argc, char* argv[]) {
   st2 = clock();
   std::cout << "Done storing pixels. Store time of "
             << (((float)st2 - (float)st1) / CLOCKS_PER_SEC)
-            << " seconds.\n\nProcessing Pixels...\n\n";
+            << " seconds.\n\nProcessing Pixels...\n";
 
   // process stored data
   pStore.process();
@@ -454,7 +450,7 @@ int main(int argc, char* argv[]) {
             << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
             << " seconds.\n\nGenerating histograms.\n";
   pStore.graph();
-  std::cout << "Done generating histograms.";
+  std::cout << "\nDone generating histograms.\n\n";
   file->Close();
 
   std::cout << output;   // print to terminal
