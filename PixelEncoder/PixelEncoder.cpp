@@ -266,9 +266,10 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         count = 0;
         int index = j + (i * 4);
         for (int k = 0; k < 262144; k++) {
-          if ((unsigned int)count >= RocHits64[index].size())
-            std::cout<<k<<"\n";
+          if ((unsigned int)count >= RocHits64[index].size()) {
+            std::cout << "64bit: " << k << "\n";
             count = 0;
+          }
           glibhit[i].write((char*)&RocHits64[index][count], 8);
           count++;
         }
@@ -278,8 +279,10 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         count = 0;
         int index = j + (i * 4);
         for (int k = 0; k < 524288; k++) {
-          if ((unsigned int)count >= RocHits32[index].size())
+          if ((unsigned int)count >= RocHits32[index].size()) {
+            std::cout << "32bit: " << k << "\n";
             count = 0;
+          }
           glibhit[i].write((char*)&RocHits32[index][count], 4);
           count++;
         }
@@ -336,7 +339,7 @@ void Pixel_Store::graph() {
             for (int lay = 1; lay < 6; lay++) {
               for (int ch = 1; ch < 49; ch ++) {
                 if (chpLay_[lay].count(ch) > 0) {
-                  hFEDChan->Fill(ch, 0);
+                  hFEDChan->Fill(ch, 0); 
                 }
               }
             }
