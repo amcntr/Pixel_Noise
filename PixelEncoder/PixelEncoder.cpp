@@ -318,14 +318,14 @@ void Pixel_Store::graph() {
                       " in Each Channel;Channel;Number of Hits";
   std::string name = "hChanFED" + std::to_string(haFEDID);
   hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
-                      ((float)hhChanhit + ((float)hhChanhit * 0.3)), -0.5, ((float)hhChanhit + ((float)hhChanhit * 0.3) - 0.5));
+                      ((float)hhChanhit + ((float)hhChanhit * 0.5)), -0.5, ((float)hhChanhit + ((float)hhChanhit * 0.5) - 0.5));
   hFEDChan->SetOption("COLZ");
   for (int i = 0; i < 48; i++) {
     title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
             ";ROC;Number of Hits";
     name = "hROCChan" + std::to_string(i + 1);
     hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
-                           ((float)hhROChit + ((float)hhROChit * 0.3)), -0.5, ((float)hhROChit + ((float)hhROChit * 0.3) - 0.5));
+                           ((float)hhROChit + ((float)hhROChit * 0.5)), -0.5, ((float)hhROChit + ((float)hhROChit * 0.5) - 0.5));
     hChanROC[i]->SetOption("COLZ");
   }
   int chanHits = 0;
@@ -361,11 +361,11 @@ void Pixel_Store::graph() {
   hFEDChan->Draw();
   title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
   canvas->Print("histograms.pdf", title.c_str());
-  for (int i = 0; i < 48; i++) {
+  /*for (int i = 0; i < 48; i++) {
     title = "Title:Hits per ROC in channel #" + std::to_string(i + 1);
     hChanROC[i]->Draw();
     canvas->Print("histograms.pdf", title.c_str());
-  }
+  }*/
   canvas->Print("histograms.pdf]");
 }
 
