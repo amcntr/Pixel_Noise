@@ -100,7 +100,7 @@ void Pixel_Store::process() {
           if (lay.first != 0) {
             for (auto const& ch : lay.second) {
               for (auto const& roc : ch.second) {
-                int index = (int)ceil((float)ch.first / 16.0) - 1;
+                int index = (int)(ceil((float)ch.first / 16.0) - 1);
                 if ((roc.second.size() > 15) && (lay.first > 2))
                   rocHigHitpFile_[index] = true;
                 if (roc.second.size() > hhROChit)
@@ -263,7 +263,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       int index = j + (i * 16);
       header = (header << 2 | BlockType[index]);
     }
-    glibhit[i].write((char*)&header, 4);
+    //glibhit[i].write((char*)&header, 4);
     int last = 0;
     int left = 0;
     // write the SRAMhit binary data
