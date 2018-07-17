@@ -102,7 +102,7 @@ void Pixel_Store::process() {
               for (auto const& roc : ch.second) {
                 int index = (int)ceil((float)ch.first / 16.0) - 1;
                 if ((roc.second.size() > 15) && (lay.first > 2))
-                  rocHigHitpBlock_[index] = true;
+                  rocHigHitpFile_[index] = true;
                 if (roc.second.size() > hhROChit)
                   hhROChit = roc.second.size();
                 Chhit += roc.second.size();
@@ -128,9 +128,10 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
   std::ofstream glibpix[3];
 
   // These are buffers for writing the data to files
-  // 1 for each block of the hit files. 4 blocks per file.
-  std::vector<uint32_t> RocHits32[12];
-  std::vector<uint64_t> RocHits64[12];
+  // 1 block for each channel
+  // 16 channels per file
+  std::vector<uint32_t> RocHits32[48];
+  std::vector<uint64_t> RocHits64[48];
   // For the header file of the SRAMhit files
   // indicates the binary format used
   // 2 bits per block
@@ -138,7 +139,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
   // 1: 4 rocs, 32bit
   // 2: 8 rocs, 32bit
   // 3: 8 rocs, 64bit
-  uint32_t BlockType[12];
+  uint32_t BlockType[48];
   // counts the amount of events
   // with zero hits
   int zevCt = 0;
@@ -170,52 +171,53 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
                 hits[roc.first] = (uint32_t)(roc.second.size());
               }
               // use rocid and hits on roc for conversion
-              uint32_t hitBuffer1 = 0;
-              uint64_t hitBuffer2 = 0;
-              // index for pushing hit binary into hit buffer
-              int index = (int)ceil((float)ch.first / 4.0) - 1;
+              uint32_t hitBuffer32 = 0;
+              uint64_t hitBuffer64 = 0;
+              // index for pushing hit binary into file buffer
+              int index = (int)(ch.first - 1);
               // diiferent layers have differenct # of rocs
+              // create hit buffer from hit data and push into file buffer
               switch (lay.first) {
                 case 1:  // layer 1
                   for (int rc = 1; rc < 3; rc++) {
                     if (hits.count(rc) > 0)
-                      hitBuffer1 = (hitBuffer1 << 16 | hits[rc]);
+                      hitBuffer32 = (hitBuffer32 << 16 | hits[rc]);
                     else
-                      hitBuffer1 <<= 16;
+                      hitBuffer32 <<= 16;
                   }
-                  RocHits32[index].push_back(hitBuffer1);
+                  RocHits32[index].push_back(hitBuffer32);
                   break;
                 case 2:  // layer 2
                   for (int rc = 1; rc < 5; rc++) {
                     if (hits.count(rc) > 0)
-                      hitBuffer1 = (hitBuffer1 << 8 | hits[rc]);
+                      hitBuffer32 = (hitBuffer32 << 8 | hits[rc]);
                     else
-                      hitBuffer1 <<= 8;
+                      hitBuffer32 <<= 8;
                   }
                   if (BlockType[index] < 1)
                     BlockType[index] = 1;
-                  RocHits32[index].push_back(hitBuffer1);
+                  RocHits32[index].push_back(hitBuffer32);
                   break;
                 default:  // layer 3-4 and fpix
-                  if (rocHigHitpBlock_[index / 4]) {
+                  if (rocHigHitpFile_[index / 4]) {
                     for (int rc = 1; rc < 9; rc++) {
                       if (hits.count(rc) > 0)
-                        hitBuffer2 = (hitBuffer2 << 8 | hits[rc]);
+                        hitBuffer64 = (hitBuffer64 << 8 | hits[rc]);
                       else
-                        hitBuffer2 <<= 8;
+                        hitBuffer64 <<= 8;
                     }
-                    RocHits64[index].push_back(hitBuffer2);
+                    RocHits64[index].push_back(hitBuffer64);
                     BlockType[index] = 3;
                   } else {
                     for (int rc = 1; rc < 9; rc++) {
                       if (hits.count(rc) > 0)
-                        hitBuffer1 = (hitBuffer1 << 4 | hits[rc]);
+                        hitBuffer32 = (hitBuffer32 << 4 | hits[rc]);
                       else
-                        hitBuffer1 <<= 4;
+                        hitBuffer32 <<= 4;
                     }
                     if (BlockType[index] < 2)
                       BlockType[index] = 2;
-                    RocHits32[index].push_back(hitBuffer1);
+                    RocHits32[index].push_back(hitBuffer32);
                   }
                   break;
               }
@@ -227,11 +229,11 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
             for (int layer = 1; layer < 6; layer++) {
               for (int chan = 1; chan < 49; chan++) {
                 if (chpLay_[layer].count(chan) > 0) {
-                  int index = (int)ceil((float)chan / 4.0) - 1;
-                  if ((rocHigHitpBlock_[index / 4]) && (layer > 2))
-                    RocHits64[index].push_back((uint64_t)0);
+                  int index = (int)ceil((float)chan / 16.0) - 1;
+                  if ((rocHigHitpFile_[index]) && (layer > 2))
+                    RocHits64[chan].push_back((uint64_t)0);
                   else
-                    RocHits32[index].push_back((uint32_t)0);
+                    RocHits32[chan].push_back((uint32_t)0);
                 }
               }
             }
@@ -256,19 +258,19 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
     // write the SRAMhit files
     // The SRAMhit files are divided into 4 blocks
     uint32_t header = 0;
-    for (int j = 0; j < 4; j++) {
-      int index = j + (i * 4);
+    for (int j = 0; j < 16; j++) {
+      int index = j + (i * 16);
       header = (header << 2 | BlockType[index]);
     }
-    glibhit[i].write((char*)&header, 1);
+    glibhit[i].write((char*)&header, 4);
     int last = 0;
     int left = 0;
     // write the SRAMhit binary data
-    if (rocHigHitpBlock_[i]) {
-      for (int j = 0; j < 4; j++) {
+    if (rocHigHitpFile_[i]) {
+      for (int j = 0; j < 16; j++) {
         count = 0;
-        int index = j + (i * 4);
-        for (int k = 0; k < 262144; k++) {
+        int index = j + (i * 16);
+        for (int k = 0; k < 65536; k++) {
           if ((unsigned int)count >= RocHits64[index].size()) {
             left = RocHits64[index].size();
             count = 0;
@@ -278,13 +280,14 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         }
         std::cout << "SRAMhit" << i << " 64-bit Block" << j
                   << "\tSize left: " << left
-                  << "\tLast Count: " << count << '\n';
+                  << "\tPosition: " << count
+                  << "\tDifference: " << (left - count) << '\n';
       }
     } else {
-      for (int j = 0; j < 4; j++) {
+      for (int j = 0; j < 16; j++) {
         count = 0;
-        int index = j + (i * 4);
-        for (int k = 0; k < 524288; k++) {
+        int index = j + (i * 16);
+        for (int k = 0; k < 131072; k++) {
           if ((unsigned int)count >= RocHits32[index].size()) {
             left = RocHits32[index].size();
             count = 0;
@@ -294,7 +297,8 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
         }
         std::cout << "SRAMhit" << i << " 32-bit Block" << j
                   << "\tSize left: " << left
-                  << "\tLast Count: " << count << '\n';
+                  << "\tPosition: " << count
+                  << "\tDifference: " << (left - count) << '\n';
       }
     }
     // write the SRAMpix files

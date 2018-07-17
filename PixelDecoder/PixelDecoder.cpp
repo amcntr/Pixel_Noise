@@ -34,21 +34,21 @@ int Decoder::open(std::string filename, int chanBase) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
     if ((int)file.tellg() != 8388609)
         return 0;
-    int block = ((int)file.tellg() - 1) / 4;
+    int block = ((int)file.tellg() - 4) / 16;
     file.seekg(0);
     uint8_t headerBuffer;
     uint8_t hbuf;
-    int header[4];
+    int header[16];
     uint32_t line32;
     uint64_t line64;
     ROCs rocBuffer;
-    file.read((char*)&headerBuffer, 1);
-    for (int i = 0; i < 4; i++) {
+    file.read((char*)&headerBuffer, 4);
+    for (int i = 0; i < 16; i++) {
         hbuf = headerBuffer << (i * 2);
-        hbuf >>= (6);
+        hbuf >>= (30);
         header[i] = (int)hbuf;
-        int chanID = chanBase + (i * 4);
-        std::cout << "Processing block " << i << ' ';
+        int chanID = chanBase + i;
+        std::cout << "Processing channel " << i << ' ';
         switch (header[i]) {
             case 0:
                 std::cout << "Layer 1.\n";
@@ -57,8 +57,6 @@ int Decoder::open(std::string filename, int chanBase) {
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 2));
                     chanID++;
                     line32 = 0;
-                    if ( chanID > ((chanBase + 3) + (i * 4)) )
-                        chanID = chanBase + (i * 4);
                 }
                 break;
             case 1:
@@ -68,19 +66,15 @@ int Decoder::open(std::string filename, int chanBase) {
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
                     chanID++;
                     line32 = 0;
-                    if ( chanID > ((chanBase + 3) + (i * 4)) )
-                        chanID = chanBase + (i * 4);
                 }
                 break;
             case 2:
                 std::cout << "Layer 3-4 and fpix, 32 bit.\n";
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 8));
+                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
                     chanID++;
                     line32 = 0;
-                    if ( chanID > ((chanBase + 3) + (i * 4)) )
-                        chanID = chanBase + (i * 4);
                 }
                 break;
             case 3:
@@ -90,8 +84,6 @@ int Decoder::open(std::string filename, int chanBase) {
                     hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
                     chanID++;
                     line64 = 0;
-                    if ( chanID > ((chanBase + 3) + (i * 4)) )
-                        chanID = chanBase + (i * 4);
                 }
                 break;
             default:
