@@ -44,7 +44,7 @@ class Pixel_Store {
   // roc highest hits per block
   // id: block id in hits files
   // value: if a roc in block has irregularly high hits
-  bool rocHigHitFile_[3] = {false};
+  bool rocHigHitpFile_[3] = {false};
   // channel id occurrences per layer
   // < layer id, < channel id, occurrences > >
   std::map<int, std::map<int, int> > chpLay_;

@@ -20,8 +20,6 @@
 //    layer 3-4 and FPix
 //      8 rocs per 32bits
 
-#include "PixelEncoder.h"
-
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH2.h>
@@ -31,6 +29,8 @@
 #include <TTree.h>
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
+
+#include "PixelEncoder.h"
 
 // checks if pixel is already stored and adds to container
 // for events with zero hits, add layer 0
