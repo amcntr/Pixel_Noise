@@ -9,16 +9,12 @@
 // a CMSSW framework analyzer program.
 //
 // Format:
-//  for hits per roc      for pixel addresses
-//  SRAMhit#.bin        SRAMpix#.bin
-//   32 bit blocks          32 bit blocks
-//      0x[roc1][roc2]...         0x[25:16][13:8][7:0]
-//    layer 1:            0x[row][col][adc]
-//      2 rocs per 32bits
-//    layer 2:
-//      4 rocs per 32bits
-//    layer 3-4 and FPix
-//      8 rocs per 32bits
+//  for hits per roc         for pixel addresses
+//  SRAMhit#.bin             SRAMpix#.bin
+//   32 bit blocks            32 bit blocks
+//   or 64 bit blocks          0x[25:16][13:8][7:0]
+//    0x[roc1][roc2]...        0x[row][col][adc]
+
 
 #include <TCanvas.h>
 #include <TFile.h>
@@ -44,281 +40,213 @@ int Pixel_Store::add(int event,
                      int col,
                      int adc) {
   // layer 0 is for events with 0 hits
-  if (layer > 0) {
+    if (layer > 0) {
     // merge row and col into unique number by bit shifting them
-    uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
-
-    if (!check(event, fed, layer, ch, roc, rowcol)) {
-      storage[event][fed][layer][ch][roc][rowcol] = (uint32_t)adc;
-      hitspFED_[fed] += 1;
-      // return 0 for no duplicate counting
-      return 0;
-    } else
-      // duplicate found, return 1
-      return 1;
-  } else {
-    storage[event][fed][layer][0][0][(uint32_t)0] = (uint32_t)(0);
-    return 0;
-  }
+        uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
+        ChanLayer_[ch] = layer;
+        if (!check(event, fed, ch, roc, rowcol)) {
+            storage[fed][ch][event][roc][rowcol] = (uint32_t)adc;
+            hitspFED_[fed] += 1;
+            // return 0 for no duplicate counting
+            return 0;
+        } else
+            // duplicate found, return 1
+            return 1;
+    } else {
+        zeroEvents[event] += 1;
+        for (int c = 1; c < 49; c++){
+            storage[fed][c][event][0][(uint32_t)(-1)] = (uint32_t)(0);
+        }
+        return 0;
+    }
 }
 
 // checks if pixel is stored in container
 bool Pixel_Store::check(int event,
                         int fed,
-                        int layer,
                         int chan,
                         int roc,
                         uint32_t rowcol) {
-  Pixels::iterator pix = storage[event][fed][layer][chan][roc].find(rowcol);
+    Pixels::iterator pix = storage[fed][chan][event][roc].find(rowcol);
 
-  if (pix == storage[event][fed][layer][chan][roc].end())
-    return false;
+    if (pix == storage[fed][chan][event][roc].end()) 
+        return false;
 
-  return true;
+    return true;
 }
 
 void Pixel_Store::process() {
-  haFEDhit = 0;
-  totalHits = 0;
-  hhChanhit = 0;
-  hhROChit = 0;
-  int Chhit = 0;
-  totalEvents = storage.size();
-  totalFEDs = hitspFED_.size();
-  // for FEDID in "hits per fed" map
-  for (auto const& fid : hitspFED_) {
-    int avg = fid.second / totalEvents;
-    totalHits += fid.second;
-    if (avg > haFEDhit) {
-      haFEDhit = avg;
-      haFEDID = fid.first;
-    }
-  }
-  for (auto const& event : storage) {
-    for (auto const& fed : event.second) {
-      if (fed.first == haFEDID) {
-        for (auto const& lay : fed.second) {
-          if (lay.first != 0) {
-            std::cout<<lay.first<<' ';
-            for (auto const& ch : lay.second) {
-              for (auto const& roc : ch.second) {
-                int index = (int)(ceil((float)ch.first / 16.0) - 1);
-                  std::cout<<index<<'\n';
-                if ((roc.second.size() > 15) && (lay.first > 2))
-                  rocHigHitpFile_[index] = true;
-                if (roc.second.size() > hhROChit)
-                  hhROChit = roc.second.size();
-                Chhit += roc.second.size();
-              }
-              if (Chhit > hhChanhit)
-                hhChanhit = Chhit;
-              Chhit = 0;
-              chpLay_[lay.first][ch.first] += 1;
-            }
-          }
+    haFEDhit = 0;
+    totalHits = 0;
+    totalEvents = storage.size();
+    totalFEDs = hitspFED_.size();
+    for (auto const& fid : hitspFED_) {
+        int avg = fid.second / totalEvents;
+        totalHits += fid.second;
+        if (avg > haFEDhit) {
+            haFEDhit = avg;
+            haFEDID = fid.first;
         }
-      }
     }
-  }
+    for (auto const& ch : storage[haFEDID]) {
+        for (auto const& event : ch.second) {
+            for (auto const& roc : event.second) {
+                if ((roc.second.size() > 15) && (ChannelLayer_[ch] > 2))
+                    rocHigHitpFile_ = true;
+            }
+        }
+    }
 }
 
-// outputs 12 binary files of "hits per roc" and pixel addresses
-// for the fed during all events in data file. Half of the files
-// are looped to the max file size. The other half are not looped.
-void Pixel_Store::encode(int targetFED, std::string file_name) {
-  std::string filename;
-  std::ofstream glibhit[3];
-  std::ofstream glibpix[3];
-
-  // These are buffers for writing the data to files
-  // 1 block for each channel
-  // 16 channels per file
-  std::vector<uint32_t> RocHits32[48];
-  std::vector<uint64_t> RocHits64[48];
-  // For the header file of the SRAMhit files
-  // indicates the binary format used
-  // 2 bits per block
-  // 0: 2 rocs, 32bit
-  // 1: 4 rocs, 32bit
-  // 2: 8 rocs, 32bit
-  // 3: 8 rocs, 64bit
-  uint32_t BlockType[48];
-  // counts the amount of events
-  // with zero hits
-  zeroEvents = 0;
-  // buffer for pixel address binary
-  std::vector<uint32_t> PixAdd[3];
-  // buffer for hits per roc
-  std::unordered_map<int, uint32_t> hits;
-  // convert data in map structure to binary format
-  // and place in a buffer for file writing.
-  for (auto const& evt : storage) {
-    for (auto const& fed : evt.second) {
-      if (fed.first == targetFED) {
-        for (auto const& lay : fed.second) {
-          if (lay.first > 0) {
-            for (auto const& ch : lay.second) {
-              for (auto const& roc : ch.second) {
-                for (auto const& pix : roc.second) {
-                  // convert pixel addresses into binary
-                  uint32_t addressBuffer = 0;
-                  addressBuffer = (pix.first | pix.second);
-                  if (ch.first < 17)
-                    PixAdd[0].push_back(addressBuffer);
-                  if ((ch.first < 33) && (ch.first > 16))
-                    PixAdd[1].push_back(addressBuffer);
-                  if (ch.first > 32)
-                    PixAdd[2].push_back(addressBuffer);
-                }
-                // get rocid and hits on roc
-                hits[roc.first] = (uint32_t)(roc.second.size());
-              }
-              // use rocid and hits on roc for conversion
-              uint32_t hitBuffer32 = 0;
-              uint64_t hitBuffer64 = 0;
-              // index for pushing hit binary into file buffer
-              int index = (int)(ch.first - 1);
-              // diiferent layers have differenct # of rocs
-              // create hit buffer from hit data and push into file buffer
-              switch (lay.first) {
-                case 1:  // layer 1
-                  for (int rc = 1; rc < 3; rc++) {
-                    if (hits.count(rc) > 0)
-                      hitBuffer32 = (hitBuffer32 << 16 | hits[rc]);
-                    else
-                      hitBuffer32 <<= 16;
-                  }
-                  RocHits32[index].push_back(hitBuffer32);
-                  break;
-                case 2:  // layer 2
-                  for (int rc = 1; rc < 5; rc++) {
-                    if (hits.count(rc) > 0)
-                      hitBuffer32 = (hitBuffer32 << 8 | hits[rc]);
-                    else
-                      hitBuffer32 <<= 8;
-                  }
-                  if (BlockType[index] < 1)
-                    BlockType[index] = 1;
-                  RocHits32[index].push_back(hitBuffer32);
-                  break;
-                default:  // layer 3-4 and fpix
-                  if (rocHigHitpFile_[index / 4]) {
-                    for (int rc = 1; rc < 9; rc++) {
-                      if (hits.count(rc) > 0)
-                        hitBuffer64 = (hitBuffer64 << 8 | hits[rc]);
-                      else
-                        hitBuffer64 <<= 8;
+// convert data in map structure to binary format
+// and place in a buffer for file writing.
+void Pixel_Store::encode(int targetFED) {
+    // These are buffers for writing the data to files
+    // 1 block for each channel
+    // 16 channels per file
+    std::vector<uint64_t> RocFileBuffer[48];
+    // For the header file of the SRAMhit files
+    // indicates the binary format used
+    // 2 bits per block
+    // 0: 2 rocs, 32bit
+    // 1: 4 rocs, 32bit
+    // 2: 8 rocs, 32bit
+    // 3: 8 rocs, 64bit
+    uint32_t BlockType[48];
+    // buffer for pixel address binary
+    std::vector<uint32_t> PixAdd[3];
+    // buffer for hits per roc
+    std::unordered_map<int, uint64_t> hits;
+    // loop over events in target fed id
+    for (auto const& event : storage[haFEDID]) {
+        // loop over all channels
+        for (int ch = 1; ch < 49; ch++) {
+            // if event is registered as a zero event
+            // or channel has no registered hits
+            // push zero hits for channel
+            if ((zeroEvents[event.first] > 0) || (event.second.count(ch) == 0) {
+                RocFileBuffer[ch - 1].push_back((uint64_t)0);
+            } else {
+                for (auto const& roc : storage[haFEDID][event.first][ch]) {
+                    for (auto const& pix : roc.second) {
+                        // convert pixel addresses into binary
+                        // and push into pix buffer
+                        uint32_t addressBuffer = 0;
+                        addressBuffer = (pix.first | pix.second);
+                        int index = (int)ceil((float)ch / 16.0) - 1;
+                        PixAdd[index].push_back(addressBuffer);
                     }
-                    RocHits64[index].push_back(hitBuffer64);
-                    BlockType[index] = 3;
-                  } else {
-                    for (int rc = 1; rc < 9; rc++) {
-                      if (hits.count(rc) > 0)
-                        hitBuffer32 = (hitBuffer32 << 4 | hits[rc]);
-                      else
-                        hitBuffer32 <<= 4;
-                    }
-                    if (BlockType[index] < 2)
-                      BlockType[index] = 2;
-                    RocHits32[index].push_back(hitBuffer32);
-                  }
-                  break;
-              }
-              hits.clear();
-            }
-          } else {
-            // push rocs for events with zero hits
-            zeroEvents += 1;
-            for (int layer = 1; layer < 6; layer++) {
-              for (int chan = 1; chan < 49; chan++) {
-                if (chpLay_[layer].count(chan) > 0) {
-                  int index = (int)ceil((float)chan / 16.0) - 1;
-                  if ((rocHigHitpFile_[index]) && (layer > 2))
-                    RocHits64[chan - 1].push_back((uint64_t)0);
-                  else
-                    RocHits32[chan - 1].push_back((uint32_t)0);
+                    // store rocs that have registered hits
+                    hits[roc.first] = (uint64_t)roc.second.size();
                 }
-              }
+                uint64_t hitBuffer = 0;
+                switch (ChannelLayer_[ch]) {
+                    case 1:
+                    BlockType[ch.first - 1] = 0;
+                    for (int r = 1; r < 3; r++) {
+                        if (hits.count(rc) > 0)
+                            hitBuffer = (hitBuffer << 16 | hits[rc]);
+                        else
+                            hitBuffer <<= 16;
+                    }
+                    break;
+                    case 2:
+                    BlockType[ch.first - 1] = 1;
+                    for (int r = 1; r < 5; r++) {
+                        if (hits.count(rc) > 0)
+                            hitBuffer = (hitBuffer << 8 | hits[rc]);
+                        else
+                            hitBuffer <<= 8;
+                    }
+                    break;
+                    default:
+                    if (rocHigHitpFile_) {
+                        BlockType[ch.first - 1] = 3;
+                        for (int r = 1; r < 9; r++) {
+                            if (hits.count(rc) > 0)
+                                hitBuffer = (hitBuffer << 8 | hits[rc]);
+                            else
+                                hitBuffer <<= 8;
+                        }
+                    } else {
+                        BlockType[ch.first - 1] = 2;
+                        for (int r = 1; r < 9; r++) {
+                            if (hits.count(rc) > 0)
+                                hitBuffer = (hitBuffer << 4 | hits[rc]);
+                            else
+                                hitBuffer <<= 4;
+                        }
+                    }
+                }
+                RocFileBuffer[ch - 1].push_back(hitBuffer);
+                hits.clear();
             }
-          }
         }
-      }
-    }
-  }
-  // begin writing the files
-
-  // These files have to be an exact file size.
-  // So it loops over the data until the file size is met.
-  // The size in this case is 2^21 32bit blocks or around 8.39 MB
-  const int FILESIZE = 8388608; // filesize in bytes
-  for (int i = 0; i < 3; i++) {
-    filename = file_name + "hit" + std::to_string(i) + ".bin";
-    glibhit[i].open(filename.c_str(), std::ios::binary | std::ios::out);
-    filename = file_name + "pix" + std::to_string(i) + ".bin";
-    glibpix[i].open(filename.c_str(), std::ios::binary | std::ios::out);
-    int count = 0;
-
-    // write the SRAMhit files
-    // The SRAMhit files are divided into 4 blocks
-    uint32_t header = 0;
-    for (int j = 0; j < 16; j++) {
-      int index = j + (i * 16);
-      header = (header << 2 | BlockType[index]);
-    }
-    std::cout<<std::bitset<32>(header)<<"\n";
-    glibhit[i].write((char*)&header, 4);
-    int last = 0;
-    int left = 0;
-    // write the SRAMhit binary data
-    if (rocHigHitpFile_[i]) {
-      for (int j = 0; j < 16; j++) {
-        count = 0;
-        int index = j + (i * 16);
-        for (int k = 0; k < (FILESIZE / 128); k++) {
-          if ((unsigned int)count >= RocHits64[index].size()) {
-            left = RocHits64[index].size();
-            count = 0;
-          }
-          glibhit[i].write((char*)&RocHits64[index][count], 8);
-          count++;
-        }
-        std::cout << "SRAMhit" << i << " 64-bit Ch" << (index + 1)
-                  << "\tSize left: " << left
-                  << "\tPosition: " << count
-                  << "\tDifference: " << (left - count) << '\n';
-      }
-    } else {
-      for (int j = 0; j < 16; j++) {
-        count = 0;
-        int index = j + (i * 16);
-        for (int k = 0; k < (FILESIZE / 64); k++) {
-          if ((unsigned int)count >= RocHits32[index].size()) {
-            left = RocHits32[index].size();
-            count = 0;
-          }
-          glibhit[i].write((char*)&RocHits32[index][count], 4);
-          count++;
-        }
-        std::cout << "SRAMhit" << i << " 32-bit Ch" << (index + 1)
-                  << "\tSize left: " << left
-                  << "\tPosition: " << count
-                  << "\tDifference: " << (left - count) << '\n';
-      }
-    }
-    // write the SRAMpix files
-    count = 0;
-    for (int j = 0; j < (FILESIZE / 4); j++) {
-      if ((unsigned int)count >= PixAdd[i].size())
-        count = 0;
-      glibpix[i].write((char*)&PixAdd[i][count], 4);
-      count++;
     }
 
-    glibhit[i].close();
-    glibpix[i].close();
-  }
+    // checks if buffer sizes match
+    for (int i = 1; i < 48; i++) {
+        if (RocFileBuffer[i].size() != RocFileBuffer[i - 1])
+            throw std::length_error("Block sizes do not match.");
+    }
+
+    // These files have to be an exact file size.
+    // So it loops over the data until the file size is met.
+    // The size in this case is 2^21 32bit registers or around 8.39 MB
+    std::string filename;
+    std::ofstream glibhit[3];
+    std::ofstream glibpix[3];
+    // Filesize in registers
+    const int FILESIZE = 2097152;
+    // begin writing files.
+    for (int filenum = 0; filenum < 3; filenum++) {
+        filename = "SRAMhit" + std::to_string(filenum) + ".bin";
+        glibhit[filenum].open(filename.c_str(), std::ios::binary | std::ios::out);
+        filename = "SRAMpix" + std::to_string(filenum) + ".bin";
+        glibpix[filenum].open(filename.c_str(), std::ios::binary | std::ios::out);
+        
+        int position = 0;
+        
+        uint32_t header = 0;
+        for (int block = 0; block < 16; block++) {
+            int index = block + (filenum * 16);
+            header = (header << 2 | BlockType[index]);
+        }
+        glibhit[i].write((char*)&header, 4);
+        
+        for (int block = 0; block < 16; block++) {
+            position = 0;
+            int index = block + (filenum * 16);
+            if (rocHigHitpFile_) {
+                for (int registers = 0; registers < (FILESIZE / 16); registers += 2) {
+                    if (position == RocFileBuffer[index].size())
+                        position = 0;
+                    glibhit[filenum].write((char*)&RocFileBuffer[index][position], 8);
+                    position++;
+                }
+            } else {
+                for (int registers = 0; registers < (FILESIZE / 16); registers++) {
+                    if (position == RocFileBuffer[index].size())
+                        position = 0;
+                    glibhit[filenum].write((char*)&RocFileBuffer[index][position], 4);
+                    position++;
+                }
+            }
+        }
+        
+        position = 0;
+        for (int registers = 0; registers < FILESIZE; registers++) {
+            if ((unsigned int)position >= PixAdd[filenum].size())
+                position = 0;
+            glibpix[filenum].write((char*)&PixAdd[filenum][position], 4);
+            position++;
+        }
+        glibhit[filenum].close();
+        glibpix[filenum].close();
+    }
 }
 
+/*
 void Pixel_Store::graph() {
   TCanvas* canvas = new TCanvas("canvas");
   TH2D *hChanROC[48], *hFEDChan;
@@ -326,14 +254,16 @@ void Pixel_Store::graph() {
                       " in Each Channel;Channel;Number of Hits";
   std::string name = "hChanFED" + std::to_string(haFEDID);
   hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
-                      ((float)hhChanhit + ((float)hhChanhit * 0.5)), -0.5, ((float)hhChanhit + ((float)hhChanhit * 0.5) - 0.5));
+                      ((float)hhChanhit + ((float)hhChanhit * 0.5)), -0.5,
+                      ((float)hhChanhit + ((float)hhChanhit * 0.5) - 0.5));
   hFEDChan->SetOption("COLZ");
   for (int i = 0; i < 48; i++) {
     title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
             ";ROC;Number of Hits";
     name = "hROCChan" + std::to_string(i + 1);
     hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
-                           ((float)hhROChit + ((float)hhROChit * 0.5)), -0.5, ((float)hhROChit + ((float)hhROChit * 0.5) - 0.5));
+                           ((float)hhROChit + ((float)hhROChit * 0.5)), -0.5,
+                           ((float)hhROChit + ((float)hhROChit * 0.5) - 0.5));
     hChanROC[i]->SetOption("COLZ");
   }
   int chanHits = 0;
@@ -354,9 +284,9 @@ void Pixel_Store::graph() {
             }
           } else {
             for (int lay = 1; lay < 6; lay++) {
-              for (int ch = 1; ch < 49; ch ++) {
+              for (int ch = 1; ch < 49; ch++) {
                 if (chpLay_[lay].count(ch) > 0) {
-                  hFEDChan->Fill(ch, 0); 
+                  hFEDChan->Fill(ch, 0);
                 }
               }
             }
@@ -369,106 +299,109 @@ void Pixel_Store::graph() {
   hFEDChan->Draw();
   title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
   canvas->Print("histograms.pdf", title.c_str());
-  /*for (int i = 0; i < 48; i++) {
+  for (int i = 0; i < 48; i++) {
     title = "Title:Hits per ROC in channel #" + std::to_string(i + 1);
     hChanROC[i]->Draw();
     canvas->Print("histograms.pdf", title.c_str());
-  }*/
+  }
   canvas->Print("histograms.pdf]");
 }
+*/
 
 int main(int argc, char* argv[]) {
-  // clock to record process time
-  clock_t t1, t2, st1, st2, et1, et2;
+    // clock to record process time
+    clock_t t1, t2, st1, st2, et1, et2;
 
-  if (argc != 2) {  // if no arguments
-    std::cout << "usage: " << argv[0] << " <filename>\n";
-    return 1;
-  }
+    if (argc != 2) {  // if no arguments
+        std::cout << "usage: " << argv[0] << " <filename>\n";
+        return 1;
+    }
 
-  TFile* file = new TFile(argv[1]);
-  // check if file loaded correctly
-  if (!(file->IsOpen())) {
-    std::cout << "Couln't open file.\n";
-    return 1;
-  }
+    TFile* file = new TFile(argv[1]);
+    // check if file loaded correctly
+    if (!(file->IsOpen())) {
+        std::cout << "Couln't open file.\n";
+        return 1;
+    }
 
-  t1 = clock();
-  std::cout << "Program start.\n";
+    t1 = clock();
+    std::cout << "Program start.\n";
 
-  // decode data from TTree
-  TTreeReader readerH("HighFedData", file);
-  TTreeReaderValue<int> event(readerH, "Data._eventID");
-  TTreeReaderValue<int> fed(readerH, "Data._fedID");
-  TTreeReaderValue<int> layer(readerH, "Data._layer");
-  TTreeReaderValue<int> chan(readerH, "Data._channel");
-  TTreeReaderValue<int> roc(readerH, "Data._ROC");
-  TTreeReaderValue<int> row(readerH, "Data._row");
-  TTreeReaderValue<int> col(readerH, "Data._col");
-  TTreeReaderValue<int> adc(readerH, "Data._adc");
+    // decode data from TTree
+    TTreeReader readerH("HighFedData", file);
+    TTreeReaderValue<int> event(readerH, "Data._eventID");
+    TTreeReaderValue<int> fed(readerH, "Data._fedID");
+    TTreeReaderValue<int> layer(readerH, "Data._layer");
+    TTreeReaderValue<int> chan(readerH, "Data._channel");
+    TTreeReaderValue<int> roc(readerH, "Data._ROC");
+    TTreeReaderValue<int> row(readerH, "Data._row");
+    TTreeReaderValue<int> col(readerH, "Data._col");
+    TTreeReaderValue<int> adc(readerH, "Data._adc");
 
-  TTreeReader readerZ("ZeroData", file);
-  TTreeReaderValue<int> event0(readerZ, "Data._eventID");
-  TTreeReaderValue<int> fed0(readerZ, "Data._fedID");
-  TTreeReaderValue<int> layer0(readerZ, "Data._layer");
+    TTreeReader readerZ("ZeroData", file);
+    TTreeReaderValue<int> event0(readerZ, "Data._eventID");
+    TTreeReaderValue<int> fed0(readerZ, "Data._fedID");
+    TTreeReaderValue<int> layer0(readerZ, "Data._layer");
 
-  // declare output file to store output information
-  std::ofstream outputFile;
-  outputFile.open("output.txt");
+    // declare output file to store output information
+    std::ofstream outputFile;
+    outputFile.open("output.txt");
 
-  Pixel_Store pStore;
+    Pixel_Store pStore;
 
-  st1 = clock();
-  std::cout << "\nStoring pixels...\n";
-  // stores duplicate pixel amount
-  int duplicates = 0;
-  // loop through TTree and store data in Pixel_Store
-  while (readerH.Next()) {
-    duplicates +=
-        pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
-  }
-  while (readerZ.Next()) {
-    duplicates += pStore.add(*event0, *fed0, *layer0, 0, 0, 0, 0, 0);
-  }
+    st1 = clock();
+    std::cout << "\nStoring pixels...\n";
+    // stores duplicate pixel amount
+    int duplicates = 0;
+    // loop through TTree and store data in Pixel_Store
+    while (readerH.Next()) {
+        duplicates += pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
+    }
+    while (readerZ.Next()) {
+        duplicates += pStore.add(*event0, *fed0, *layer0, 0, 0, 0, 0, 0);
+    }
 
-  st2 = clock();
-  std::cout << "Done storing pixels. Store time of "
-            << (((float)st2 - (float)st1) / CLOCKS_PER_SEC)
-            << " seconds.\n\nProcessing Pixels...\n";
+    st2 = clock();
+    std::cout << "Done storing pixels. Store time of "
+              << (((float)st2 - (float)st1) / CLOCKS_PER_SEC)
+              << " seconds.\n\nProcessing Pixels...\n";
 
-  // process stored data
-  pStore.process();
+    // process stored data
+    pStore.process();
 
-  // output is stored in a string to print both to a file and terminal
-  std::string output;
-  output = "Total duplicate pixels: " + std::to_string(duplicates) +
-           "\nTotal events: " + std::to_string(pStore.totalEvents) +
-           "\nTotal events with zero hits: " + std::to_string(pStore.zeroEvents) +
-           "\nTotal hits: " + std::to_string(pStore.totalHits) +
-           "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
-           "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
-           "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
+    // output is stored in a string to print both to a file and terminal
+    std::string output;
+    output = "Total duplicate pixels: " + std::to_string(duplicates) +
+             "\nTotal events: " + std::to_string(pStore.totalEvents) +
+             "\nTotal events with zero hits: " + std::to_string(pStore.zeroEvents) +
+             "\nTotal hits: " + std::to_string(pStore.totalHits) +
+             "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
+             "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
+             "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
 
-  outputFile << output;  // print to file
+    // print to file
+    outputFile << output;
 
-  et1 = clock();
-  std::cout << "\n\nEncoding binary files...\n";
-  pStore.encode(pStore.haFEDID);
-  et2 = clock();
-  std::cout << "Done encoding with an encoding time of "
-            << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
-            << " seconds.\n\nGenerating histograms.\n";
-  pStore.graph();
-  std::cout << "\nDone generating histograms.\n\n";
-  file->Close();
+    et1 = clock();
+    std::cout << "\n\nEncoding binary files...\n";
+    pStore.encode(pStore.haFEDID);
+    et2 = clock();
+    std::cout << "Done encoding with an encoding time of "
+              << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
+              << " seconds.\n\nGenerating histograms.\n";
+    //pStore.graph();
+    std::cout << "Not generating histograms.";
+    std::cout << "\nDone generating histograms.\n\n";
+    file->Close();
 
-  std::cout << output;   // print to terminal
+    // print to terminal
+    std::cout << output;
 
-  // output process time in seconds
-  t2 = clock();
-  float seconds = ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
-  std::cout << "\n\nProgram finish with a runtime of " << seconds
-            << " seconds.\n\n";
+    // output process time in seconds
+    t2 = clock();
+    float seconds = ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
+    std::cout << "\n\nProgram finish with a runtime of " << seconds
+              << " seconds.\n\n";
 
   return 1;
 }

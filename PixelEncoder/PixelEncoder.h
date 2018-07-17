@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <stdexcept>
 
 // Container types
 // row, col as key, adc as value
@@ -26,13 +27,10 @@ using Pixels = std::unordered_map<uint32_t, uint32_t>;
 using ROCs = std::map<int, Pixels>;
 // channel id as key and roc map
 using Chans = std::map<int, ROCs>;
-// layer number as key, chans map as value
-//     0 is unknown, 1-4 is BPix, 5+ is FPix
-using Layers = std::map<int, Chans>;
-// fed id as key and channel map
-using FEDs = std::map<int, Layers>;
-// event id as key and fed map for list of feds
-using Events = std::map<int, FEDs>;
+// event id as key and channel map
+using Events = std::map<int, Chans>;
+// fed id as key and event map
+using FEDs = std::map<int, Events>;
 
 class Pixel_Store {
   // Multiple Pixel Storage Class
@@ -44,16 +42,11 @@ class Pixel_Store {
   // roc highest hits per block
   // id: block id in hits files
   // value: if a roc in block has irregularly high hits
-  bool rocHigHitpFile_[3] = {false};
-  // channel id occurrences per layer
-  // < layer id, < channel id, occurrences > >
-  std::map<int, std::map<int, int> > chpLay_;
+  bool rocHigHitpFile_ = false;
+  // Which layer each channel is in.
+  // <channel id, layer id>
+  std::map<int, int> ChanLayer_;
  public:
-  // highest hits roc hits
-  // number of hits in above roc 
-  int hhROChit; // highest hits roc number of hits
-  // highest number of hits in a single channel
-  int hhChanhit;
   // highest average fed id
   // highest avg hit per event fed id
   int haFEDID;
@@ -64,7 +57,9 @@ class Pixel_Store {
   int totalHits;
   int totalEvents;
   int totalFEDs;
-  int zeroEvents;
+  // store events with no hits
+  // <event id, 1 >
+  std::unordered_map<int, int> zeroEvents;
   // main storage
   Events storage;
  public:
@@ -83,7 +78,6 @@ class Pixel_Store {
   // checks if pixel is already stored
   bool check(int event,
              int fed,
-             int layer, 
              int ch, 
              int roc, 
              uint32_t rowcol);
@@ -93,7 +87,7 @@ class Pixel_Store {
   // populates histograms in future
   // returns number for error checking
   void process();
-  void encode(int targetFED, std::string title_name = "SRAM");
+  void encode(int targetFED);
   void graph();
 };
 
