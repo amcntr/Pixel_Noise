@@ -64,6 +64,7 @@ class Pixel_Store {
   int totalHits;
   int totalEvents;
   int totalFEDs;
+  int zeroEvents;
   // main storage
   Events storage;
  public:
