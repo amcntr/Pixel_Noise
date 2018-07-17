@@ -99,10 +99,12 @@ void Pixel_Store::process() {
       if (fed.first == haFEDID) {
         for (auto const& lay : fed.second) {
           if (lay.first != 0) {
+            std::cout<<lay.first<<' ';
             for (auto const& ch : lay.second) {
               for (auto const& roc : ch.second) {
                 int index = (int)(ceil((float)ch.first / 16.0) - 1);
                 if ((roc.second.size() > 15) && (lay.first > 2))
+                  std::cout<<index<<'\n';
                   rocHigHitpFile_[index] = true;
                 if (roc.second.size() > hhROChit)
                   hhROChit = roc.second.size();
@@ -143,7 +145,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
   uint32_t BlockType[48];
   // counts the amount of events
   // with zero hits
-  int zevCt = 0;
+  zeroEvents = 0;
   // buffer for pixel address binary
   std::vector<uint32_t> PixAdd[3];
   // buffer for hits per roc
@@ -226,7 +228,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
             }
           } else {
             // push rocs for events with zero hits
-            zevCt += 1;
+            zeroEvents += 1;
             for (int layer = 1; layer < 6; layer++) {
               for (int chan = 1; chan < 49; chan++) {
                 if (chpLay_[layer].count(chan) > 0) {
@@ -243,7 +245,6 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       }
     }
   }
-  std::cout << "\nZero Event Count: " << zevCt << '\n';
   // begin writing the files
 
   // These files have to be an exact file size.
@@ -442,6 +443,7 @@ int main(int argc, char* argv[]) {
   std::string output;
   output = "Total duplicate pixels: " + std::to_string(duplicates) +
            "\nTotal events: " + std::to_string(pStore.totalEvents) +
+           "\nTotal events with zero hits: " + std::to_string(pStore.zeroEvents) +
            "\nTotal hits: " + std::to_string(pStore.totalHits) +
            "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
            "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
