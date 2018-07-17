@@ -231,9 +231,9 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
                 if (chpLay_[layer].count(chan) > 0) {
                   int index = (int)ceil((float)chan / 16.0) - 1;
                   if ((rocHigHitpFile_[index]) && (layer > 2))
-                    RocHits64[chan].push_back((uint64_t)0);
+                    RocHits64[chan - 1].push_back((uint64_t)0);
                   else
-                    RocHits32[chan].push_back((uint32_t)0);
+                    RocHits32[chan - 1].push_back((uint32_t)0);
                 }
               }
             }
@@ -248,6 +248,8 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
   // These files have to be an exact file size.
   // So it loops over the data until the file size is met.
   // The size in this case is 2^21 32bit blocks or around 8.39 MB
+  const int FILESIZE = 8388608;
+  int blocksize = FILESIZE / 16;
   for (int i = 0; i < 3; i++) {
     filename = file_name + "hit" + std::to_string(i) + ".bin";
     glibhit[i].open(filename.c_str(), std::ios::binary | std::ios::out);
@@ -270,7 +272,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       for (int j = 0; j < 16; j++) {
         count = 0;
         int index = j + (i * 16);
-        for (int k = 0; k < 65536; k++) {
+        for (int k = 0; k < (blocksize / 8); k++) {
           if ((unsigned int)count >= RocHits64[index].size()) {
             left = RocHits64[index].size();
             count = 0;
@@ -278,7 +280,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
           glibhit[i].write((char*)&RocHits64[index][count], 8);
           count++;
         }
-        std::cout << "SRAMhit" << i << " 64-bit Block" << j
+        std::cout << "SRAMhit" << i << " 64-bit Ch" << index
                   << "\tSize left: " << left
                   << "\tPosition: " << count
                   << "\tDifference: " << (left - count) << '\n';
@@ -287,7 +289,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       for (int j = 0; j < 16; j++) {
         count = 0;
         int index = j + (i * 16);
-        for (int k = 0; k < 131072; k++) {
+        for (int k = 0; k < (blocksize / 4); k++) {
           if ((unsigned int)count >= RocHits32[index].size()) {
             left = RocHits32[index].size();
             count = 0;
@@ -295,7 +297,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
           glibhit[i].write((char*)&RocHits32[index][count], 4);
           count++;
         }
-        std::cout << "SRAMhit" << i << " 32-bit Block" << j
+        std::cout << "SRAMhit" << i << " 32-bit Ch" << index
                   << "\tSize left: " << left
                   << "\tPosition: " << count
                   << "\tDifference: " << (left - count) << '\n';
@@ -303,7 +305,7 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
     }
     // write the SRAMpix files
     count = 0;
-    for (int j = 0; j < 2097152; j++) {
+    for (int j = 0; j < (FILESIZE / 4); j++) {
       if ((unsigned int)count >= PixAdd[i].size())
         count = 0;
       glibpix[i].write((char*)&PixAdd[i][count], 4);
