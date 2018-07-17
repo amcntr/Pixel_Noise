@@ -212,7 +212,7 @@ void Pixel_Store::encode(int targetFED) {
             int index = block + (filenum * 16);
             header = (header << 2 | BlockType[index]);
         }
-        glibhit[i].write((char*)&header, 4);
+        glibhit[filenum].write((char*)&header, 4);
         
         for (int block = 0; block < 16; block++) {
             position = 0;
@@ -373,7 +373,7 @@ int main(int argc, char* argv[]) {
     std::string output;
     output = "Total duplicate pixels: " + std::to_string(duplicates) +
              "\nTotal events: " + std::to_string(pStore.totalEvents) +
-             "\nTotal events with zero hits: " + std::to_string(pStore.zeroEvents) +
+             "\nTotal events with zero hits: " + std::to_string(pStore.zeroEvents.size()) +
              "\nTotal hits: " + std::to_string(pStore.totalHits) +
              "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
              "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
