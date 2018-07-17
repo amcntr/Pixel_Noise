@@ -29,6 +29,7 @@
 #include <TTree.h>
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
+#include <bitset>
 
 #include "PixelEncoder.h"
 
@@ -263,7 +264,8 @@ void Pixel_Store::encode(int targetFED, std::string file_name) {
       int index = j + (i * 16);
       header = (header << 2 | BlockType[index]);
     }
-    //glibhit[i].write((char*)&header, 4);
+    std::cout<<std::bitset<32>(header)<<"\n";
+    glibhit[i].write((char*)&header, 4);
     int last = 0;
     int left = 0;
     // write the SRAMhit binary data
