@@ -103,8 +103,8 @@ void Pixel_Store::process() {
             for (auto const& ch : lay.second) {
               for (auto const& roc : ch.second) {
                 int index = (int)(ceil((float)ch.first / 16.0) - 1);
-                if ((roc.second.size() > 15) && (lay.first > 2))
                   std::cout<<index<<'\n';
+                if ((roc.second.size() > 15) && (lay.first > 2))
                   rocHigHitpFile_[index] = true;
                 if (roc.second.size() > hhROChit)
                   hhROChit = roc.second.size();
