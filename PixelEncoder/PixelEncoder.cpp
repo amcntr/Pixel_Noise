@@ -186,7 +186,7 @@ void Pixel_Store::encode(int targetFED) {
 
     // checks if buffer sizes match
     for (int i = 1; i < 48; i++) {
-        if (RocFileBuffer[i].size() != RocFileBuffer[i - 1])
+        if (RocFileBuffer[i].size() != RocFileBuffer[i - 1].size())
             throw std::length_error("Block sizes do not match.");
     }
 
