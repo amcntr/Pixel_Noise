@@ -45,7 +45,7 @@ int Pixel_Store::add(int event,
         uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
         ChanLayer_[ch] = layer;
         if (!check(event, fed, ch, roc, rowcol)) {
-            storage[fed][ch][event][roc][rowcol] = (uint32_t)adc;
+            storage[fed][event][ch][roc][rowcol] = (uint32_t)adc;
             hitspFED_[fed] += 1;
             // return 0 for no duplicate counting
             return 0;
@@ -55,7 +55,7 @@ int Pixel_Store::add(int event,
     } else {
         zeroEvents[event] += 1;
         for (int c = 1; c < 49; c++){
-            storage[fed][c][event][0][(uint32_t)(-1)] = (uint32_t)(0);
+            storage[fed][event][c][0][(uint32_t)(-1)] = (uint32_t)(0);
         }
         return 0;
     }
@@ -67,9 +67,9 @@ bool Pixel_Store::check(int event,
                         int chan,
                         int roc,
                         uint32_t rowcol) {
-    Pixels::iterator pix = storage[fed][chan][event][roc].find(rowcol);
+    Pixels::iterator pix = storage[fed][event][chan][roc].find(rowcol);
 
-    if (pix == storage[fed][chan][event][roc].end()) 
+    if (pix == storage[fed][event][chan][roc].end()) 
         return false;
 
     return true;
@@ -91,7 +91,7 @@ void Pixel_Store::process() {
     for (auto const& ch : storage[haFEDID]) {
         for (auto const& event : ch.second) {
             for (auto const& roc : event.second) {
-                if ((roc.second.size() > 15) && (ChannelLayer_[ch] > 2))
+                if ((roc.second.size() > 15) && (ChannelLayer_[ch.first] > 2))
                     rocHigHitpFile_ = true;
             }
         }

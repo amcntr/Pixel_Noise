@@ -45,7 +45,7 @@ class Pixel_Store {
   bool rocHigHitpFile_ = false;
   // Which layer each channel is in.
   // <channel id, layer id>
-  std::map<int, int> ChanLayer_;
+  std::map<int, int> ChannelLayer_;
  public:
   // highest average fed id
   // highest avg hit per event fed id
