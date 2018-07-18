@@ -11,7 +11,6 @@ int Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
     for(uint32_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
-        storage[chanID][i + 1] += (int)buf;
         hits += (int)buf;
     }
     return hits;
@@ -24,7 +23,6 @@ int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
     for(uint64_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
-        storage[chanID][i + 1] += (int)buf;
         hits += (int)buf;
     }
     return hits;
