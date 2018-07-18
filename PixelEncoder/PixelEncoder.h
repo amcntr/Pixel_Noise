@@ -50,7 +50,7 @@ class Pixel_Store {
   std::unordered_map<int,int> eventStore_;
   // store events with no hits
   // <fedid, <event id, 1 >
-  std::unordered_map<int, std::unordered_map<int, int> zeroEvents_;
+  std::unordered_map<int, std::unordered_map<int, int>> zeroEvents_;
  public:
   // highest average fed id
   // highest avg hit per event fed id
