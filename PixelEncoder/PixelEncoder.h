@@ -3,7 +3,7 @@
 // Using pixel data stored in a root TTree;
 // finds the fed id with the highest avg hits,
 // encodes pixel addresses into a binary format
-// for FED testing.
+// for FED testing. 
 
 #ifndef PIXELENCODER_H
 #define PIXELENCODER_H
@@ -47,6 +47,7 @@ class Pixel_Store {
   // <channel id, layer id>
   std::map<int, int> ChannelLayer_;
   // store events in a hash
+  // for event counting
   std::unordered_map<int,int> eventStore_;
   // store events with no hits
   // <fedid, <event id, 1 >
@@ -88,7 +89,9 @@ class Pixel_Store {
   // populates histograms in future
   // returns number for error checking
   void process();
+  // generate binary files
   void encode(int targetFED);
+  // create histogram from source data
   void graph();
 };
 
