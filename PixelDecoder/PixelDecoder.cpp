@@ -32,7 +32,7 @@ int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
 
 int Decoder::open(std::string filename, int chanBase) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
-    if ((int)file.tellg() != 8388609)
+    if ((int)file.tellg() != 8388612)
         return 0;
     int block = ((int)file.tellg() - 4) / 16;
     file.seekg(0);
@@ -55,7 +55,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < block / 4; j) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 2));
-                    chanID++;
                     line32 = 0;
                 }
                 break;
@@ -64,7 +63,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
-                    chanID++;
                     line32 = 0;
                 }
                 break;
@@ -73,7 +71,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < block / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
-                    chanID++;
                     line32 = 0;
                 }
                 break;
@@ -82,7 +79,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < block / 8; j++) {
                     file.read( (char*) &line64, 8);
                     hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
-                    chanID++;
                     line64 = 0;
                 }
                 break;
