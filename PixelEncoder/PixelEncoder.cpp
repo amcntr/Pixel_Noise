@@ -43,19 +43,20 @@ int Pixel_Store::add(int event,
     if (layer > 0) {
     // merge row and col into unique number by bit shifting them
         uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
-        ChanLayer_[ch] = layer;
+        ChannelLayer_[ch] = layer;
         if (!check(event, fed, ch, roc, rowcol)) {
             storage[fed][event][ch][roc][rowcol] = (uint32_t)adc;
             hitspFED_[fed] += 1;
             // return 0 for no duplicate counting
             return 0;
-        } else
+        } else {
             // duplicate found, return 1
             return 1;
+        }
     } else {
         zeroEvents[event] += 1;
         for (int c = 1; c < 49; c++){
-            storage[fed][event][c][0][(uint32_t)(-1)] = (uint32_t)(0);
+            storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
         }
         return 0;
     }
@@ -67,7 +68,7 @@ bool Pixel_Store::check(int event,
                         int chan,
                         int roc,
                         uint32_t rowcol) {
-    Pixels::iterator pix = storage[fed][event][chan][roc].find(rowcol);
+    auto pix = storage[fed][event][chan][roc].find(rowcol);
 
     if (pix == storage[fed][event][chan][roc].end()) 
         return false;
@@ -124,7 +125,7 @@ void Pixel_Store::encode(int targetFED) {
             // if event is registered as a zero event
             // or channel has no registered hits
             // push zero hits for channel
-            if ((zeroEvents[event.first] > 0) || (event.second.count(ch) == 0) {
+            if ((zeroEvents.count(event.first) > 0) || (event.second.count(ch) == 0) {
                 RocFileBuffer[ch - 1].push_back((uint64_t)0);
             } else {
                 for (auto const& roc : storage[haFEDID][event.first][ch]) {
