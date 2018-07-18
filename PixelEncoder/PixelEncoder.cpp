@@ -56,7 +56,6 @@ int Pixel_Store::add(int event,
             return 1;
         }
     } else {
-        std::cout<<fed<<' '<<event<<'\n';
         zeroEvents_[fed][event] += 1;
         for (int c = 1; c < 49; c++){
             storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
@@ -105,6 +104,8 @@ void Pixel_Store::encode(int targetFED) {
     // 2: 8 rocs, 32bit
     // 3: 8 rocs, 64bit
     uint32_t BlockType[48];
+    int emptyCh = 0;
+    int hitCh = 0;
     // buffer for pixel address binary
     std::vector<uint32_t> PixAdd[3];
     // buffer for hits per roc
@@ -118,7 +119,9 @@ void Pixel_Store::encode(int targetFED) {
             // push zero hits for channel
             if ((event.second.count(ch) == 0) || (zeroEvents_[haFEDID][event.first] > 0)) {
                 RocFileBuffer[ch - 1].push_back((uint64_t)0);
+                emptyCh++;
             } else {
+                hitCh++;
                 for (auto const& roc : storage[haFEDID][event.first][ch]) {
                     for (auto const& pix : roc.second) {
                         // convert pixel addresses into binary
@@ -187,6 +190,8 @@ void Pixel_Store::encode(int targetFED) {
         std::cout << "Pixel Address Buffer " << i
                   << ": " << PixAdd[i].size() << '\n';
     }
+    std::cout << "Number of channels with zero hits: " << emptyCh
+              << "\nNumer of channels with hits: " << hitCh << '\n';
 
     // These files have to be an exact file size.
     // So it loops over the data until the file size is met.
