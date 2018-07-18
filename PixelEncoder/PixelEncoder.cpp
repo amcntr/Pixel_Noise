@@ -217,7 +217,8 @@ void Pixel_Store::encode(int targetFED) {
     std::ofstream glibhit[3];
     std::ofstream glibpix[3];
     // Filesize in registers
-    const int FILESIZE = 2097152;
+    const int FILESIZE = 2097152; // 2^21
+    const int BLOCKSIZE = 131072; // 2^17
     // begin writing files.
     for (int filenum = 0; filenum < 3; filenum++) {
         filename = "SRAMhit" + std::to_string(filenum) + ".bin";
@@ -238,14 +239,14 @@ void Pixel_Store::encode(int targetFED) {
             position = 0;
             int index = block + (filenum * 16);
             if (rocHigHitpFile_) {
-                for (int registers = 0; registers < (FILESIZE / 16); registers += 2) {
+                for (int registers = 0; registers < BLOCKSIZE; registers += 2) {
                     if (position == RocFileBuffer[index].size())
                         position = 0;
                     glibhit[filenum].write((char*)&RocFileBuffer[index][position], 8);
                     position++;
                 }
             } else {
-                for (int registers = 0; registers < (FILESIZE / 16); registers++) {
+                for (int registers = 0; registers < BLOCKSIZE; registers++) {
                     if (position == RocFileBuffer[index].size())
                         position = 0;
                     glibhit[filenum].write((char*)&RocFileBuffer[index][position], 4);
