@@ -271,7 +271,7 @@ void Pixel_Store::encode(int targetFED) {
 void Pixel_Store::graph() {
     TCanvas* canvas = new TCanvas("canvas");
     TH2D *hChanROC[48], *hFEDChan;
-    std::string title = "Hits in FED #" + std::to_string(haFEDID) +
+    std::string title = "Hits Per Channel in FED #" + std::to_string(haFEDID) +
                       " in Each Channel;Channel;Number of Hits";
     std::string name = "hChanFED" + std::to_string(haFEDID);
     hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
@@ -308,7 +308,7 @@ void Pixel_Store::graph() {
     }
     canvas->Print("histogram_source.pdf[");
     hFEDChan->Draw();
-    title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
+    title = "Title:Source Hits per channel in FED #" + std::to_string(haFEDID);
     canvas->Print("histogram_source.pdf", title.c_str());
     /*
     for (int i = 0; i < 48; i++) {

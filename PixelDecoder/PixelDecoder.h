@@ -19,7 +19,7 @@
 
 class Decoder {
 private:
-    TH2D hFEDChan = TH2D("hChanFED", "Hits per Channel;Channel;Number of Hits", 48, 1., 49., 400, -0.5, 399.5);
+    TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits", 48, 1., 49., 400, -0.5, 399.5);
 public:
     Decoder() { hFEDChan.SetOption("COLZ"); }
     virtual ~Decoder() { }
