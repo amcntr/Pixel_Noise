@@ -84,7 +84,7 @@ void Pixel_Store::process() {
     for (auto const& event : storage[haFEDID]) {
         for (auto const& ch : event.second) {
             int hits = 0;
-            for (auto const& roc : event.second) {
+            for (auto const& roc : ch.second) {
                 if ((roc.second.size() > 15) && (ChannelLayer_[ch.first] > 2))
                     rocHigHitpFile_ = true;
                 if (roc.first > 0) {
@@ -203,7 +203,12 @@ void Pixel_Store::encode(int targetFED) {
                   << "size: " << PixAdd[i].size() << '\n';
     }
     std::cout << "\nNumber of channels with zero hits: " << emptyCh
-              << "\nNumer of channels with hits: " << hitCh << '\n';
+              << "\nNumer of channels with hits: " << hitCh
+              << "\n64-bit binary files: ";
+    if (rocHigHitpFile_)
+        std::cout<<"True\n";
+    else
+        std::cout<<"False\n";
 
     // These files have to be an exact file size.
     // So it loops over the data until the file size is met.
