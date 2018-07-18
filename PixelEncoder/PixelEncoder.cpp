@@ -277,8 +277,8 @@ void Pixel_Store::graph() {
                 ";ROC;Number of Hits";
         name = "hROCChan" + std::to_string(i + 1);
         hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
-                               ((float)hhRoc + ((float)hhRoc * 0.5)), -0.5,
-                               ((float)hhRoc + ((float)hhRoc * 0.5) - 0.5));
+                               (20), -0.5,
+                               (20 - 0.5)); //(float)hhRoc + ((float)hhRoc * 0.5)
         hChanROC[i]->SetOption("COLZ");
     }
     int chanHits = 0;
