@@ -283,14 +283,17 @@ void Pixel_Store::graph() {
     }
     int chanHits = 0;
     for (auto const& event : storage[haFEDID]) {
-        for (auto const& chan : event.second) {
-            for (auto const& roc : chan.second) {
-                if (roc.first > 0) {
-                    hChanROC[chan.first - 1]->Fill(roc.first, roc.second.size());
+        for (int ch = 1; ch < 49; ch++) {
+            for (int rc = 1; rc < 9; rc++) {
+                auto roc = storage[haFEDID][event.first][ch].find(rc);
+                if (roc == storage[fed][event][ch].end()) {
+                    hChanROC[ch - 1]->Fill(rc, 0);
+                } else {
+                    hChanROC[ch - 1]->Fill(rc, roc.second.size());
                     chanHits += roc.second.size();
                 }
             }
-            hFEDChan->Fill(chan.first, chanHits);
+            hFEDChan->Fill(ch, chanHits);
             chanHits = 0;
         }
     }
