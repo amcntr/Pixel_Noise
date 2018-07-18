@@ -32,27 +32,26 @@ int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
 
 int Decoder::open(std::string filename, int chanBase) {
     std::ifstream file(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
-    if ((int)file.tellg() != 8388612)
+    const int FILESIZE = 8388612;
+    int blocksize = (FILESIZE - 4) / 16;
+    if ((int)file.tellg() != FILESIZE)
         return 0;
-    int block = ((int)file.tellg() - 4) / 16;
     file.seekg(0);
-    uint8_t headerBuffer;
-    uint8_t hbuf;
-    int header[16];
+    uint32_t headerBuffer;
+    uint32_t header;
     uint32_t line32;
     uint64_t line64;
     ROCs rocBuffer;
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
-        hbuf = headerBuffer << (i * 2);
-        hbuf >>= (30);
-        header[i] = (int)hbuf;
+        header = headerBuffer << (i * 2);
+        header >>= (30);
         int chanID = chanBase + i;
         std::cout << "Processing channel " << i << ' ';
-        switch (header[i]) {
+        switch (header) {
             case 0:
                 std::cout << "Layer 1.\n";
-                for (int j = 0; j < block / 4; j) {
+                for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 2));
                     line32 = 0;
@@ -60,7 +59,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 break;
             case 1:
                 std::cout << "Layer 2.\n";
-                for (int j = 0; j < block / 4; j++) {
+                for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
                     line32 = 0;
@@ -68,7 +67,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 break;
             case 2:
                 std::cout << "Layer 3-4 and fpix, 32 bit.\n";
-                for (int j = 0; j < block / 4; j++) {
+                for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
                     line32 = 0;
@@ -76,7 +75,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 break;
             case 3:
                 std::cout << "Layer 3-4 and fpix, 64 bit.\n";
-                for (int j = 0; j < block / 8; j++) {
+                for (int j = 0; j < blocksize / 8; j++) {
                     file.read( (char*) &line64, 8);
                     hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
                     line64 = 0;
