@@ -58,7 +58,7 @@ int Pixel_Store::add(int event,
     } else {
         zeroEvents_[fed][event] += 1;
         for (int c = 1; c < 49; c++){
-            storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
+            storage[fed][event][c][-1][(uint32_t)(0)] = (uint32_t)(0);
         }
         return 0;
     }
@@ -181,22 +181,22 @@ void Pixel_Store::encode(int targetFED) {
 
     // checks if buffer sizes match
     for (int i = 0; i < 48; i++) {
-        std::cout << "Roc Hit Buffer " << i << ": " 
+        std::cout << "Roc Hit Buffer " << i << " size: " 
                   << RocFileBuffer[i].size() << '\n'; 
         //if (RocFileBuffer[i].size() != RocFileBuffer[i - 1].size())
         //    throw std::length_error("Block sizes do not match.");
     }
     for (int i = 0; i < 3; i++) {
         std::cout << "Pixel Address Buffer " << i
-                  << ": " << PixAdd[i].size() << '\n';
+                  << "size: " << PixAdd[i].size() << '\n';
     }
-    std::cout << "Number of channels with zero hits: " << emptyCh
+    std::cout << "\nNumber of channels with zero hits: " << emptyCh
               << "\nNumer of channels with hits: " << hitCh << '\n';
 
     // These files have to be an exact file size.
     // So it loops over the data until the file size is met.
     // The size in this case is 2^21 32bit registers or around 8.39 MB
-    /*std::string filename;
+    std::string filename;
     std::ofstream glibhit[3];
     std::ofstream glibpix[3];
     // Filesize in registers
@@ -246,70 +246,54 @@ void Pixel_Store::encode(int targetFED) {
         }
         glibhit[filenum].close();
         glibpix[filenum].close();
-    }*/
+    }
 }
 
-/*
+
 void Pixel_Store::graph() {
-  TCanvas* canvas = new TCanvas("canvas");
-  TH2D *hChanROC[48], *hFEDChan;
-  std::string title = "Hits in FED #" + std::to_string(haFEDID) +
+    TCanvas* canvas = new TCanvas("canvas");
+    TH2D *hChanROC[48], *hFEDChan;
+    std::string title = "Hits in FED #" + std::to_string(haFEDID) +
                       " in Each Channel;Channel;Number of Hits";
-  std::string name = "hChanFED" + std::to_string(haFEDID);
-  hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
+    std::string name = "hChanFED" + std::to_string(haFEDID);
+    hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
                       ((float)hhChanhit + ((float)hhChanhit * 0.5)), -0.5,
                       ((float)hhChanhit + ((float)hhChanhit * 0.5) - 0.5));
-  hFEDChan->SetOption("COLZ");
-  for (int i = 0; i < 48; i++) {
-    title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
-            ";ROC;Number of Hits";
-    name = "hROCChan" + std::to_string(i + 1);
-    hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
-                           ((float)hhROChit + ((float)hhROChit * 0.5)), -0.5,
-                           ((float)hhROChit + ((float)hhROChit * 0.5) - 0.5));
-    hChanROC[i]->SetOption("COLZ");
-  }
-  int chanHits = 0;
-  for (auto const& event : storage) {
-    for (auto const& fed : event.second) {
-      if (fed.first == haFEDID) {
-        for (auto const& layer : fed.second) {
-          if (layer.first > 0) {
-            for (auto const& chan : layer.second) {
-              for (auto const& roc : chan.second) {
-                if (roc.first > 0) {
-                  hChanROC[chan.first - 1]->Fill(roc.first, roc.second.size());
-                }
-                chanHits += roc.second.size();
-              }
-              hFEDChan->Fill(chan.first, chanHits);
-              chanHits = 0;
-            }
-          } else {
-            for (int lay = 1; lay < 6; lay++) {
-              for (int ch = 1; ch < 49; ch++) {
-                if (chpLay_[lay].count(ch) > 0) {
-                  hFEDChan->Fill(ch, 0);
-                }
-              }
-            }
-          }
-        }
-      }
+    hFEDChan->SetOption("COLZ");
+    for (int i = 0; i < 48; i++) {
+        title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
+                ";ROC;Number of Hits";
+        name = "hROCChan" + std::to_string(i + 1);
+        hChanROC[i] = new TH2D(name.c_str(), title.c_str(), 8, 1., 9.,
+                               ((float)hhROChit + ((float)hhROChit * 0.5)), -0.5,
+                               ((float)hhROChit + ((float)hhROChit * 0.5) - 0.5));
+        hChanROC[i]->SetOption("COLZ");
     }
-  }
-  canvas->Print("histograms.pdf[");
-  hFEDChan->Draw();
-  title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
-  canvas->Print("histograms.pdf", title.c_str());
-  for (int i = 0; i < 48; i++) {
-    title = "Title:Hits per ROC in channel #" + std::to_string(i + 1);
-    hChanROC[i]->Draw();
+    int chanHits = 0;
+    for (auto const& event : storage[haFEDID]) {
+        for (auto const& chan : event.second) {
+            for (auto const& roc : chan.second) {
+                if (roc.first > 0) {
+                    hChanROC[chan.first - 1]->Fill(roc.first, roc.second.size());
+                    chanHits += roc.second.size();
+                }
+            }
+            hFEDChan->Fill(chan.first, chanHits);
+            chanHits = 0;
+        }
+    }
+    canvas->Print("histograms.pdf[");
+    hFEDChan->Draw();
+    title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
     canvas->Print("histograms.pdf", title.c_str());
-  }
-  canvas->Print("histograms.pdf]");
+    for (int i = 0; i < 48; i++) {
+        title = "Title:Hits per ROC in channel #" + std::to_string(i + 1);
+        hChanROC[i]->Draw();
+        canvas->Print("histograms.pdf", title.c_str());
+    }
+    canvas->Print("histograms.pdf]");
 }
-*/
+
 
 int main(int argc, char* argv[]) {
     // clock to record process time
@@ -392,8 +376,7 @@ int main(int argc, char* argv[]) {
     std::cout << "\nDone encoding with an encoding time of "
               << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
               << " seconds.\n\nGenerating histograms.\n";
-    //pStore.graph();
-    std::cout << "Not generating histograms.";
+    pStore.graph();
     std::cout << "\nDone generating histograms.\n\n";
     file->Close();
 
