@@ -143,37 +143,37 @@ void Pixel_Store::encode(int targetFED) {
                 uint64_t hitBuffer = 0;
                 switch (ChannelLayer_[ch]) {
                     case 1:
-                    BlockType[ch.first - 1] = 0;
+                    BlockType[ch - 1] = 0;
                     for (int r = 1; r < 3; r++) {
-                        if (hits.count(rc) > 0)
-                            hitBuffer = (hitBuffer << 16 | hits[rc]);
+                        if (hits.count(r) > 0)
+                            hitBuffer = (hitBuffer << 16 | hits[r]);
                         else
                             hitBuffer <<= 16;
                     }
                     break;
                     case 2:
-                    BlockType[ch.first - 1] = 1;
+                    BlockType[ch - 1] = 1;
                     for (int r = 1; r < 5; r++) {
-                        if (hits.count(rc) > 0)
-                            hitBuffer = (hitBuffer << 8 | hits[rc]);
+                        if (hits.count(r) > 0)
+                            hitBuffer = (hitBuffer << 8 | hits[r]);
                         else
                             hitBuffer <<= 8;
                     }
                     break;
                     default:
                     if (rocHigHitpFile_) {
-                        BlockType[ch.first - 1] = 3;
+                        BlockType[ch - 1] = 3;
                         for (int r = 1; r < 9; r++) {
-                            if (hits.count(rc) > 0)
-                                hitBuffer = (hitBuffer << 8 | hits[rc]);
+                            if (hits.count(r) > 0)
+                                hitBuffer = (hitBuffer << 8 | hits[r]);
                             else
                                 hitBuffer <<= 8;
                         }
                     } else {
-                        BlockType[ch.first - 1] = 2;
+                        BlockType[ch - 1] = 2;
                         for (int r = 1; r < 9; r++) {
-                            if (hits.count(rc) > 0)
-                                hitBuffer = (hitBuffer << 4 | hits[rc]);
+                            if (hits.count(r) > 0)
+                                hitBuffer = (hitBuffer << 4 | hits[r]);
                             else
                                 hitBuffer <<= 4;
                         }
