@@ -378,6 +378,8 @@ int main(int argc, char* argv[]) {
              "\nTotal events with zero hits: " + std::to_string(pStore.totalZeroEvents) +
              "\nTotal hits: " + std::to_string(pStore.totalHits) +
              "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
+             "\nHighest hits in a roc: " + std::to_string(pStore.hhRoc) +
+             "\nHighest hits in a channel: " +std::to_string(pStore.hhChan) +
              "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
              "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
 
