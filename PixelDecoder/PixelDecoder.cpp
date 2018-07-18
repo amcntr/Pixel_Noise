@@ -11,7 +11,6 @@ int Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
     for(uint32_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
-        storage[chanID][i + 1] += (int)buf;
         hits += (int)buf;
     }
     return hits;
@@ -24,7 +23,6 @@ int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
     for(uint64_t i = 0; i < count; i++) {
         buf = line << (i * bits);
         buf >>= (count * bits) - bits;
-        storage[chanID][i + 1] += (int)buf;
         hits += (int)buf;
     }
     return hits;
@@ -51,7 +49,6 @@ int Decoder::open(std::string filename, int chanBase) {
         int hits = 0;
         switch (header) {
             case 0:
-                std::cout << "Layer 1.\n";
                 for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 2);
@@ -60,7 +57,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 }
                 break;
             case 1:
-                std::cout << "Layer 2.\n";
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
@@ -68,7 +64,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 }
                 break;
             case 2:
-                std::cout << "Layer 3-4 and fpix, 32 bit.\n";
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
@@ -76,7 +71,6 @@ int Decoder::open(std::string filename, int chanBase) {
                 }
                 break;
             case 3:
-                std::cout << "Layer 3-4 and fpix, 64 bit.\n";
                 for (int j = 0; j < blocksize / 8; j++) {
                     file.read( (char*) &line64, 8);
                     hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
@@ -92,18 +86,6 @@ int Decoder::open(std::string filename, int chanBase) {
 }
 
 void Decoder::process() {
-    int size = storage.size();
-    int hits;
-    std::cout << "Number of Channels: " << size << '\n';
-    for (auto const& chan : storage) {
-        std::cout<<"Number of ROCs in channel " << chan.first
-            << ": " << chan.second.size() << '\n';
-        hits = 0;
-        for (auto const& roc : chan.second) {
-            std::cout<<"\tHits in ROC " << roc.first
-                << ": " << roc.second << '\n';
-        }
-    }
     TCanvas* canvas = new TCanvas("canvas");
     hFEDChan.Draw();
     canvas->Print("HitsPerChannel.pdf");
@@ -118,7 +100,7 @@ int main(int argc, char* argv[]) {
     }
     std::string path = argv[1];
     Decoder decode;
-    int error;
+    
     std::cout<<"Opening file SRAMhit0.bin\n";
     if (decode.open((path + "SRAMhit0.bin"), 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
