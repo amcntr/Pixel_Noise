@@ -27,7 +27,6 @@
 #include <TTreeReaderValue.h>
 #include <bitset>
 
-#include "PixelDecoder.h"
 #include "PixelEncoder.h"
 
 // checks if pixel is already stored and adds to container
@@ -401,23 +400,6 @@ int main(int argc, char* argv[]) {
     pStore.graph();
     std::cout << "\nDone generating histogram from source data.\n";
     file->Close();
-
-    std::cout << "\nGenerating histogram from binary files.\n";
-
-    Decoder decode;
-    std::cout << "Opening file SRAMhit0.bin\n";
-    if (decode.open(("SRAMhit0.bin"), 1) != 1)
-        std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
-    std::cout << "Opening file SRAMhit1.bin\n";
-    if (decode.open(("SRAMhit1.bin"), 17) != 1)
-        std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
-    std::cout << "Opening file SRAMhit2.bin\n";
-    if (decode.open(("SRAMhit2.bin"), 33) != 1)
-        std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
-
-    decode.process();
-
-    std::cout << "\n Done generating histogram from binary files.\n\n";
 
     // print to terminal
     std::cout << output;
