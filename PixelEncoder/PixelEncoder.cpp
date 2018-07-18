@@ -27,6 +27,7 @@
 #include <TTreeReaderValue.h>
 #include <bitset>
 
+#include "PixelDecoder.h"
 #include "PixelEncoder.h"
 
 // checks if pixel is already stored and adds to container
@@ -278,6 +279,7 @@ void Pixel_Store::graph() {
                       ((float)hhChan + ((float)hhChan * 0.5)), -0.5,
                       ((float)hhChan + ((float)hhChan * 0.5) - 0.5));
     hFEDChan->SetOption("COLZ");
+    /*
     for (int i = 0; i < 48; i++) {
         title = "Hits per ROC in Channel #" + std::to_string(i + 1) +
                 ";ROC;Number of Hits";
@@ -287,32 +289,36 @@ void Pixel_Store::graph() {
                                ((float)hhRoc + ((float)hhRoc * 0.5) - 0.5));
         hChanROC[i]->SetOption("COLZ");
     }
+    */
     int chanHits = 0;
     for (auto const& event : storage[haFEDID]) {
         for (int ch = 1; ch < 49; ch++) {
             for (int rc = 1; rc < 9; rc++) {
                 auto roc = storage[haFEDID][event.first][ch].find(rc);
-                if (roc == storage[haFEDID][event.first][ch].end()) {
-                    hChanROC[ch - 1]->Fill(rc, 0);
-                } else {
-                    hChanROC[ch - 1]->Fill(rc, storage[haFEDID][event.first][ch][rc].size());
+                if (roc != storage[haFEDID][event.first][ch].end()) {
+                    //hChanROC[ch - 1]->Fill(rc, storage[haFEDID][event.first][ch][rc].size());
                     chanHits += storage[haFEDID][event.first][ch][rc].size();
-                }
+                } 
+                /*else {
+                    hChanROC[ch - 1]->Fill(rc, 0);
+                }*/
             }
             hFEDChan->Fill(ch, chanHits);
             chanHits = 0;
         }
     }
-    canvas->Print("histograms.pdf[");
+    canvas->Print("histogram_source.pdf[");
     hFEDChan->Draw();
     title = "Title:Hits per channel in FED #" + std::to_string(haFEDID);
-    canvas->Print("histograms.pdf", title.c_str());
+    canvas->Print("histogram_source.pdf", title.c_str());
+    /*
     for (int i = 0; i < 48; i++) {
         title = "Title:Hits per ROC in channel #" + std::to_string(i + 1);
         hChanROC[i]->Draw();
         canvas->Print("histograms.pdf", title.c_str());
     }
-    canvas->Print("histograms.pdf]");
+    */
+    canvas->Print("histogram_source.pdf]");
 }
 
 
@@ -351,10 +357,6 @@ int main(int argc, char* argv[]) {
     TTreeReaderValue<int> fed0(readerZ, "Data._fedID");
     TTreeReaderValue<int> layer0(readerZ, "Data._layer");
 
-    // declare output file to store output information
-    std::ofstream outputFile;
-    outputFile.open("output.txt");
-
     Pixel_Store pStore;
 
     st1 = clock();
@@ -389,19 +391,33 @@ int main(int argc, char* argv[]) {
              "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
              "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
 
-    // print to file
-    outputFile << output;
-
     et1 = clock();
     std::cout << "\n\nEncoding binary files...\n\n";
     pStore.encode(pStore.haFEDID);
     et2 = clock();
     std::cout << "\nDone encoding with an encoding time of "
               << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
-              << " seconds.\n\nGenerating histograms.\n";
+              << " seconds.\n\nGenerating histogram from source data.\n";
     pStore.graph();
-    std::cout << "\nDone generating histograms.\n\n";
+    std::cout << "\nDone generating histogram from source data.\n";
     file->Close();
+
+    std::cout << "\nGenerating histogram from binary files.\n";
+
+    Decoder decode;
+    std::cout << "Opening file SRAMhit0.bin\n";
+    if (decode.open(("SRAMhit0.bin"), 1) != 1)
+        std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
+    std::cout << "Opening file SRAMhit1.bin\n";
+    if (decode.open(("SRAMhit1.bin"), 17) != 1)
+        std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
+    std::cout << "Opening file SRAMhit2.bin\n";
+    if (decode.open(("SRAMhit2.bin"), 33) != 1)
+        std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
+
+    decode.process();
+
+    std::cout << "\n Done generating histogram from binary files.\n\n";
 
     // print to terminal
     std::cout << output;
