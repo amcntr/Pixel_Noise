@@ -44,8 +44,8 @@ int Pixel_Store::add(int event,
         // merge row and col into unique number by bit shifting them
         uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
         ChannelLayer_[ch] = layer;
-        auto pix = storage[fed][event][chan][roc].find(rowcol);
-        if (pix == storage[fed][event][chan][roc].end()) {
+        auto pix = storage[fed][event][ch][roc].find(rowcol);
+        if (pix == storage[fed][event][ch][roc].end()) {
             storage[fed][event][ch][roc][rowcol] = (uint32_t)adc;
             hitspFED_[fed] += 1;
             // return 0 for no duplicate counting
