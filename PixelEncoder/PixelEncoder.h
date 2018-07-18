@@ -58,6 +58,10 @@ class Pixel_Store {
   // highest average fed hits
   // avg number of hits in above fed
   int haFEDhit;
+  // highest hits in a channel
+  int hhChan;
+  // highest hits in a roc
+  int hhRoc;
   // total count of stored items
   int totalHits;
   int totalEvents;
