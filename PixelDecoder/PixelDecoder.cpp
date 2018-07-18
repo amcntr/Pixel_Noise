@@ -44,7 +44,7 @@ int Decoder::open(std::string filename, int chanBase) {
         header = headerBuffer << (i * 2);
         header >>= (30);
         int chanID = chanBase + i;
-        std::cout << "Processing channel " << i << ' ';
+        std::cout << "Processing channel " << i << '\n';
         int hits = 0;
         switch (header) {
             case 0:
@@ -84,10 +84,11 @@ int Decoder::open(std::string filename, int chanBase) {
     return 1;
 }
 
-void Decoder::process() {
+void Decoder::process(std::string path) {
     TCanvas* canvas = new TCanvas("canvas");
     hFEDChan.Draw();
-    canvas->Print("HitsPerChannel.pdf");
+    std::string filename = path + "histogram_binary.pdf";
+    canvas->Print(filename.c_str());
 }
 
 int main(int argc, char* argv[]) {
@@ -110,7 +111,7 @@ int main(int argc, char* argv[]) {
     if (decode.open((path + "SRAMhit2.bin"), 33) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
-    decode.process();
+    decode.process(path);
 
     t2 = clock();
     float seconds = ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
