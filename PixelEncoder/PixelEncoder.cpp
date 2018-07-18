@@ -40,7 +40,7 @@ int Pixel_Store::add(int event,
                      int col,
                      int adc) {
     // layer 0 is for events with 0 hits
-    if (layer > 0) {
+    if ((layer > 0) || (roc > 0)) {
         // merge row and col into unique number by bit shifting them
         uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
         ChannelLayer_[ch] = layer;
@@ -54,7 +54,7 @@ int Pixel_Store::add(int event,
             return 1;
         }
     } else {
-        zeroEvents[event] += 1;
+        zeroEvents_[event] += 1;
         for (int c = 1; c < 49; c++){
             storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
         }
@@ -79,6 +79,7 @@ bool Pixel_Store::check(int event,
 void Pixel_Store::process() {
     haFEDhit = 0;
     totalHits = 0;
+    totalZeroEvents = 0;
     totalEvents = storage.size();
     totalFEDs = hitspFED_.size();
     for (auto const& fid : hitspFED_) {
@@ -88,6 +89,9 @@ void Pixel_Store::process() {
             haFEDhit = avg;
             haFEDID = fid.first;
         }
+    }
+    for (auto const& ze : zeroEvents_) {
+        totalZeroEvents++;
     }
     for (auto const& ch : storage[haFEDID]) {
         for (auto const& event : ch.second) {
@@ -125,7 +129,7 @@ void Pixel_Store::encode(int targetFED) {
             // if event is registered as a zero event
             // or channel has no registered hits
             // push zero hits for channel
-            if ((zeroEvents.count(event.first) > 0) || (event.second.count(ch) == 0)) {
+            if ((event.second.count(ch) == 0) || (zeroEvents_[ch] > 0)) {
                 RocFileBuffer[ch - 1].push_back((uint64_t)0);
             } else {
                 for (auto const& roc : storage[haFEDID][event.first][ch]) {
@@ -380,7 +384,7 @@ int main(int argc, char* argv[]) {
     std::string output;
     output = "Total duplicate pixels: " + std::to_string(duplicates) +
              "\nTotal events: " + std::to_string(pStore.totalEvents) +
-             "\nTotal events with zero hits: " + std::to_string(pStore.zeroEvents.size()) +
+             "\nTotal events with zero hits: " + std::to_string(pStore.totalZeroEvents) +
              "\nTotal hits: " + std::to_string(pStore.totalHits) +
              "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
              "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
