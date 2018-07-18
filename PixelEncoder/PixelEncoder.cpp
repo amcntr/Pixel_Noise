@@ -186,15 +186,21 @@ void Pixel_Store::encode(int targetFED) {
     }
 
     // checks if buffer sizes match
-    for (int i = 1; i < 48; i++) {
-        if (RocFileBuffer[i].size() != RocFileBuffer[i - 1].size())
-            throw std::length_error("Block sizes do not match.");
+    for (int i = 0; i < 48; i++) {
+        std::cout << "Roc Hit Buffer " << i << ": " 
+                  << RocFileBuffer[i].size() << '\n'; 
+        //if (RocFileBuffer[i].size() != RocFileBuffer[i - 1].size())
+        //    throw std::length_error("Block sizes do not match.");
+    }
+    for (int i = 0; i < 3; i++) {
+        std::cout << "Pixel Address Buffer " << i
+                  << ": " << PixAdd[i].size() << '\n';
     }
 
     // These files have to be an exact file size.
     // So it loops over the data until the file size is met.
     // The size in this case is 2^21 32bit registers or around 8.39 MB
-    std::string filename;
+    /*std::string filename;
     std::ofstream glibhit[3];
     std::ofstream glibpix[3];
     // Filesize in registers
@@ -237,14 +243,14 @@ void Pixel_Store::encode(int targetFED) {
         
         position = 0;
         for (int registers = 0; registers < FILESIZE; registers++) {
-            if ((unsigned int)position >= PixAdd[filenum].size())
+            if ((unsigned int)position == PixAdd[filenum].size())
                 position = 0;
             glibpix[filenum].write((char*)&PixAdd[filenum][position], 4);
             position++;
         }
         glibhit[filenum].close();
         glibpix[filenum].close();
-    }
+    }*/
 }
 
 /*
@@ -384,10 +390,10 @@ int main(int argc, char* argv[]) {
     outputFile << output;
 
     et1 = clock();
-    std::cout << "\n\nEncoding binary files...\n";
+    std::cout << "\n\nEncoding binary files...\n\n";
     pStore.encode(pStore.haFEDID);
     et2 = clock();
-    std::cout << "Done encoding with an encoding time of "
+    std::cout << "\nDone encoding with an encoding time of "
               << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
               << " seconds.\n\nGenerating histograms.\n";
     //pStore.graph();
