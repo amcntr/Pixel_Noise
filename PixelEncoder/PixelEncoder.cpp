@@ -125,7 +125,7 @@ void Pixel_Store::encode(int targetFED) {
             // if event is registered as a zero event
             // or channel has no registered hits
             // push zero hits for channel
-            if ((zeroEvents.count(event.first) > 0) || (event.second.count(ch) == 0) {
+            if ((zeroEvents.count(event.first) > 0) || (event.second.count(ch) == 0)) {
                 RocFileBuffer[ch - 1].push_back((uint64_t)0);
             } else {
                 for (auto const& roc : storage[haFEDID][event.first][ch]) {
