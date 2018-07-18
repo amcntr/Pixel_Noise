@@ -54,6 +54,7 @@ int Pixel_Store::add(int event,
             return 1;
         }
     } else {
+        std::cout<<event<<' '<<layer<<' '<<ch<<' '<<roc<<'\n';
         zeroEvents_[event] += 1;
         for (int c = 1; c < 49; c++){
             storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
@@ -80,7 +81,6 @@ void Pixel_Store::process() {
     haFEDhit = 0;
     totalHits = 0;
     totalZeroEvents = 0;
-    totalEvents = storage.size();
     totalFEDs = hitspFED_.size();
     for (auto const& fid : hitspFED_) {
         int avg = fid.second / totalEvents;
@@ -90,6 +90,7 @@ void Pixel_Store::process() {
             haFEDID = fid.first;
         }
     }
+    totalEvents = storage[haFEDID].size();
     for (auto const& ze : zeroEvents_) {
         totalZeroEvents++;
     }
