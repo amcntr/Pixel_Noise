@@ -286,11 +286,11 @@ void Pixel_Store::graph() {
         for (int ch = 1; ch < 49; ch++) {
             for (int rc = 1; rc < 9; rc++) {
                 auto roc = storage[haFEDID][event.first][ch].find(rc);
-                if (roc == storage[fed][event][ch].end()) {
+                if (roc == storage[haFEDID][event][ch].end()) {
                     hChanROC[ch - 1]->Fill(rc, 0);
                 } else {
-                    hChanROC[ch - 1]->Fill(rc, roc.second.size());
-                    chanHits += roc.second.size();
+                    hChanROC[ch - 1]->Fill(rc, storage[haFEDID][event.first][ch][rc].size());
+                    chanHits += storage[haFEDID][event.first][ch][rc].size();
                 }
             }
             hFEDChan->Fill(ch, chanHits);
