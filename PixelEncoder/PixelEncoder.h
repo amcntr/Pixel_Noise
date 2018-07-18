@@ -46,9 +46,11 @@ class Pixel_Store {
   // Which layer each channel is in.
   // <channel id, layer id>
   std::map<int, int> ChannelLayer_;
+  // store events in a hash
+  std::unordered_map<int,int> eventStore_;
   // store events with no hits
-  // <event id, 1 >
-  std::unordered_map<int, int> zeroEvents_;
+  // <fedid, <event id, 1 >
+  std::unordered_map<int, std::unordered_map<int, int> zeroEvents_;
  public:
   // highest average fed id
   // highest avg hit per event fed id
@@ -76,12 +78,6 @@ class Pixel_Store {
           int row,
           int col,
           int adc);
-  // checks if pixel is already stored
-  bool check(int event,
-             int fed,
-             int ch, 
-             int roc, 
-             uint32_t rowcol);
 
   // process data
   // gets highest hit roc and highest avg hit fed

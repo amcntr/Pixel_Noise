@@ -39,6 +39,7 @@ int Pixel_Store::add(int event,
                      int row,
                      int col,
                      int adc) {
+    eventStore_[event] = 1;
     // layer 0 is for events with 0 hits
     if ((layer > 0) || (roc > 0)) {
         // merge row and col into unique number by bit shifting them
@@ -56,7 +57,7 @@ int Pixel_Store::add(int event,
         }
     } else {
         std::cout<<fed<<' '<<event<<'\n';
-        zeroEvents_[event] += 1;
+        zeroEvents_[fed][event] += 1;
         for (int c = 1; c < 49; c++){
             storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
         }
@@ -68,8 +69,8 @@ void Pixel_Store::process() {
     haFEDhit = 0;
     totalHits = 0;
     totalZeroEvents = 0;
+    totalEvents = eventStore_.size();
     totalFEDs = hitspFED_.size();
-    std::cout<<"Get highest avg fed id.\n";
     for (auto const& fid : hitspFED_) {
         int avg = fid.second / totalEvents;
         totalHits += fid.second;
@@ -78,12 +79,7 @@ void Pixel_Store::process() {
             haFEDID = fid.first;
         }
     }
-    totalEvents = storage[haFEDID].size();
-    std::cout<<"Get zero events.\n";
-    for (auto const& ze : zeroEvents_) {
-        totalZeroEvents++;
-    }
-    std::cout<<"Get roc hits.\n";
+    totalZeroEvents = zeroEvents_[haFEDID].size();
     for (auto const& ch : storage[haFEDID]) {
         for (auto const& event : ch.second) {
             for (auto const& roc : event.second) {
