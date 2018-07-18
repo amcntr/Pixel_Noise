@@ -39,7 +39,6 @@ int Decoder::open(std::string filename, int chanBase) {
     uint32_t header;
     uint32_t line32;
     uint64_t line64;
-    ROCs rocBuffer;
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
         header = headerBuffer << (i * 2);
@@ -100,7 +99,7 @@ int main(int argc, char* argv[]) {
     }
     std::string path = argv[1];
     Decoder decode;
-    
+
     std::cout<<"Opening file SRAMhit0.bin\n";
     if (decode.open((path + "SRAMhit0.bin"), 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
