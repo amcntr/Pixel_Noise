@@ -39,9 +39,9 @@ int Pixel_Store::add(int event,
                      int row,
                      int col,
                      int adc) {
-  // layer 0 is for events with 0 hits
+    // layer 0 is for events with 0 hits
     if (layer > 0) {
-    // merge row and col into unique number by bit shifting them
+        // merge row and col into unique number by bit shifting them
         uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
         ChannelLayer_[ch] = layer;
         if (!check(event, fed, ch, roc, rowcol)) {

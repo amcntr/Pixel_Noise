@@ -61,7 +61,7 @@ class Pixel_Store {
   // <event id, 1 >
   std::unordered_map<int, int> zeroEvents;
   // main storage
-  Events storage;
+  FEDs storage;
  public:
   Pixel_Store() { }           // constructor
   virtual ~Pixel_Store() { }  // destructor
