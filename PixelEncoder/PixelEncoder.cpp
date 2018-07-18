@@ -44,7 +44,8 @@ int Pixel_Store::add(int event,
         // merge row and col into unique number by bit shifting them
         uint32_t rowcol = ((uint32_t)row << 16 | (uint32_t)col << 8);
         ChannelLayer_[ch] = layer;
-        if (!check(event, fed, ch, roc, rowcol)) {
+        auto pix = storage[fed][event][chan][roc].find(rowcol);
+        if (pix == storage[fed][event][chan][roc].end()) {
             storage[fed][event][ch][roc][rowcol] = (uint32_t)adc;
             hitspFED_[fed] += 1;
             // return 0 for no duplicate counting
@@ -54,7 +55,7 @@ int Pixel_Store::add(int event,
             return 1;
         }
     } else {
-        std::cout<<event<<' '<<layer<<' '<<ch<<' '<<roc<<'\n';
+        std::cout<<fed<<' '<<event<<'\n';
         zeroEvents_[event] += 1;
         for (int c = 1; c < 49; c++){
             storage[fed][event][c][0][(uint32_t)(0)] = (uint32_t)(0);
@@ -63,25 +64,12 @@ int Pixel_Store::add(int event,
     }
 }
 
-// checks if pixel is stored in container
-bool Pixel_Store::check(int event,
-                        int fed,
-                        int chan,
-                        int roc,
-                        uint32_t rowcol) {
-    auto pix = storage[fed][event][chan][roc].find(rowcol);
-
-    if (pix == storage[fed][event][chan][roc].end()) 
-        return false;
-
-    return true;
-}
-
 void Pixel_Store::process() {
     haFEDhit = 0;
     totalHits = 0;
     totalZeroEvents = 0;
     totalFEDs = hitspFED_.size();
+    std::cout<<"Get highest avg fed id.\n";
     for (auto const& fid : hitspFED_) {
         int avg = fid.second / totalEvents;
         totalHits += fid.second;
@@ -91,9 +79,11 @@ void Pixel_Store::process() {
         }
     }
     totalEvents = storage[haFEDID].size();
+    std::cout<<"Get zero events.\n";
     for (auto const& ze : zeroEvents_) {
         totalZeroEvents++;
     }
+    std::cout<<"Get roc hits.\n";
     for (auto const& ch : storage[haFEDID]) {
         for (auto const& event : ch.second) {
             for (auto const& roc : event.second) {
