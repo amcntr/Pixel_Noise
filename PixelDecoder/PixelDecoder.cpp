@@ -48,12 +48,14 @@ int Decoder::open(std::string filename, int chanBase) {
         header >>= (30);
         int chanID = chanBase + i;
         std::cout << "Processing channel " << i << ' ';
+        int hits = 0;
         switch (header) {
             case 0:
                 std::cout << "Layer 1.\n";
                 for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 2));
+                    hits = decodeRoc32(line32, chanID, 2);
+                    hFEDChan.Fill(chanID, hits);
                     line32 = 0;
                 }
                 break;
