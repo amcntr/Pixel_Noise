@@ -88,7 +88,7 @@ void Pixel_Store::process() {
                 if ((roc.second.size() > 15) && (ChannelLayer_[ch.first] > 2))
                     rocHigHitpFile_ = true;
                 if (roc.first > 0) {
-                    if (hhRoc < roc.second.size()) {
+                    if (roc.second.size() > hhRoc) {
                         hhRoc = roc.second.size();
                     }
                     hits += roc.second.size();
