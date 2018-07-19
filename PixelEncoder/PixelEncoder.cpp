@@ -272,8 +272,8 @@ void Pixel_Store::graph() {
     TCanvas* canvas = new TCanvas("canvas");
     TH2D *hChanROC[48], *hFEDChan;
     std::string title = "Hits Per Channel in FED #" + std::to_string(haFEDID) +
-                      " in Each Channel;Channel;Number of Hits";
-    std::string name = "hChanFED" + std::to_string(haFEDID);
+                      ";Channel;Number of Hits";
+    std::string name = "Source" + std::to_string(haFEDID);
     hFEDChan = new TH2D(name.c_str(), title.c_str(), 48, 1., 49.,
                       ((float)hhChan + ((float)hhChan * 0.5)), -0.5,
                       ((float)hhChan + ((float)hhChan * 0.5) - 0.5));
