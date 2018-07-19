@@ -39,7 +39,7 @@ int Decoder::open(std::string filename, int chanBase) {
     uint32_t header;
     uint32_t line32;
     uint64_t line64;
-    hitmap.clear();
+	hitmap.clear();
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
         header = headerBuffer << (i * 2);
@@ -52,41 +52,52 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 2);
-                    hitmap.push_back(std::make_pair(chanID, hits);
-		    hFEDChan.Fill(chanID, hits);
+                    hitmap.push_back(std::make_pair(chanID, hits));
+					hFEDChan.Fill(chanID, hits);
                     line32 = 0;
                 }
                 break;
             case 1:
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
+                    hits = decodeRoc32(line32, chanID, 4);
+                    hitmap.push_back(std::make_pair(chanID, hits));
                     line32 = 0;
                 }
                 break;
             case 2:
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
+                    hits = decodeRoc32(line32, chanID, 8);
+                    hitmap.push_back(std::make_pair(chanID, hits));
                     line32 = 0;
                 }
                 break;
             case 3:
                 for (int j = 0; j < blocksize / 8; j++) {
                     file.read( (char*) &line64, 8);
-                    hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
+                    hits = decodeRoc64(line32, chanID, 8);
+                    hitmap.push_back(std::make_pair(chanID, hits));
                     line64 = 0;
                 }
                 break;
             default:
                 std::cout<<"Error: Incorrect header format.\n";
         }
+        if (hits > maxhits)
+        	maxhits = hits;
     }
     file.close();
     return 1;
 }
 
 void Decoder::process(std::string path) {
+	TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits",
+						 48, 1., 49., ((float)maxhits + ((float)maxhits * 0.5)),
+						 -0.5, ((float)hhChan + ((float)hhChan * 0.5) - 0.5));
+	for (auto const& chHit : hitmap) {
+		hFEDChan.Fill(chHit.first, chHit.second);
+	}
     TCanvas* canvas = new TCanvas("canvas");
     hFEDChan.Draw();
     std::string filename = path + "histogram_binary.pdf";

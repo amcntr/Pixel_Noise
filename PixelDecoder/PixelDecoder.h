@@ -8,10 +8,9 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include <map>
 #include <vector>
 #include <string>
-#include <bitset>
+#include <utility>
 #include <TCanvas.h>
 #include <TH2.h>
 #include <TH2D.h>
@@ -19,8 +18,8 @@
 
 class Decoder {
 private:
-    TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits", 48, 1., 49., 400, -0.5, 399.5);
     std::vector< std::pair<int, int> > hitmap;
+    int maxhits = 0;
 public:
     Decoder() { hFEDChan.SetOption("COLZ"); }
     virtual ~Decoder() { }
