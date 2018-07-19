@@ -9,6 +9,7 @@
 #include <fstream>
 #include <time.h>
 #include <vector>
+#include <map>
 #include <string>
 #include <utility>
 #include <TCanvas.h>
@@ -18,7 +19,7 @@
 
 class Decoder {
 private:
-    std::vector< std::pair<int, int> > hitmap;
+    std::map<int, std::vector<int> > hitmap;
     int maxhits = 0;
 public:
     Decoder() { }

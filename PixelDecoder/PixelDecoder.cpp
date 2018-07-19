@@ -52,7 +52,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 2);
-                    hitmap.push_back(std::make_pair(chanID, hits));
+                    hitmap[chanID].push_back(hits);
                     line32 = 0;
                 }
                 break;
@@ -60,7 +60,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 4);
-                    hitmap.push_back(std::make_pair(chanID, hits));
+                    hitmap[chanID].push_back(hits);
                     line32 = 0;
                 }
                 break;
@@ -68,7 +68,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 8);
-                    hitmap.push_back(std::make_pair(chanID, hits));
+                    hitmap[chanID].push_back(hits);
                     line32 = 0;
                 }
                 break;
@@ -76,7 +76,7 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < blocksize / 8; j++) {
                     file.read( (char*) &line64, 8);
                     hits = decodeRoc64(line32, chanID, 8);
-                    hitmap.push_back(std::make_pair(chanID, hits));
+                    hitmap[chanID].push_back(hits);
                     line64 = 0;
                 }
                 break;
@@ -95,8 +95,10 @@ void Decoder::process(std::string path) {
 						 48, 1., 49., ((float)maxhits + ((float)maxhits * 0.5)),
 						 -0.5, ((float)maxhits + ((float)maxhits * 0.5) - 0.5));
 	hFEDChan.SetOption("COLZ");
-	for (auto const& chHit : hitmap) {
-		hFEDChan.Fill(chHit.first, chHit.second);
+	for (auto const& chan : hitmap) {
+		for (int hits : chan.second) {
+			hFEDChan.Fill(chan.first, hits);
+		}
 	}
     TCanvas* canvas = new TCanvas("canvas");
     hFEDChan.Draw();
