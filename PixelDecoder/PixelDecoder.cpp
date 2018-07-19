@@ -53,7 +53,6 @@ int Decoder::open(std::string filename, int chanBase) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 2);
                     hitmap.push_back(std::make_pair(chanID, hits));
-					hFEDChan.Fill(chanID, hits);
                     line32 = 0;
                 }
                 break;
