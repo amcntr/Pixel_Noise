@@ -20,6 +20,7 @@
 class Decoder {
 private:
     TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits", 48, 1., 49., 400, -0.5, 399.5);
+    std::vector< std::pair<int, int> > hitmap;
 public:
     Decoder() { hFEDChan.SetOption("COLZ"); }
     virtual ~Decoder() { }

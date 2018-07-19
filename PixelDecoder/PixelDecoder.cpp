@@ -39,6 +39,7 @@ int Decoder::open(std::string filename, int chanBase) {
     uint32_t header;
     uint32_t line32;
     uint64_t line64;
+    hitmap.clear();
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
         header = headerBuffer << (i * 2);
@@ -51,7 +52,8 @@ int Decoder::open(std::string filename, int chanBase) {
                 for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, chanID, 2);
-                    hFEDChan.Fill(chanID, hits);
+                    hitmap.push_back(std::make_pair(chanID, hits);
+		    hFEDChan.Fill(chanID, hits);
                     line32 = 0;
                 }
                 break;
