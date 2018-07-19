@@ -22,7 +22,7 @@ private:
     std::map<int, std::vector<int> > hitmap;
     int maxhits;
 public:
-    Decoder() { maxhits = 0; }
+    Decoder() { maxhits = 0; hitmap.clear() }
     virtual ~Decoder() { }
     int open(std::string file, int chanBase);
     int decodeRoc32(uint32_t line, int count);
