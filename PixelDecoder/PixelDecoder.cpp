@@ -39,48 +39,52 @@ int Decoder::open(std::string filename, int chanBase) {
     uint32_t header;
     uint32_t line32;
     uint64_t line64;
+    int hits;
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
         header = headerBuffer << (i * 2);
         header >>= (30);
         int chanID = chanBase + i;
         std::cout << "Processing channel " << i << '\n';
-        int hits = 0;
         switch (header) {
             case 0:
                 for (int j = 0; j < blocksize / 4; j) {
+                	line32 = 0;
+                	hits = 0;
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, 2);
                     hitmap[chanID].push_back(hits);
-                    line32 = 0;
-                    if (hits > maxhits) maxhits = hits;
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             case 1:
                 for (int j = 0; j < blocksize / 4; j++) {
+                	line32 = 0;
+                	hits = 0;
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, 4);
                     hitmap[chanID].push_back(hits);
-                    line32 = 0;
-                    if (hits > maxhits) maxhits = hits;
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             case 2:
                 for (int j = 0; j < blocksize / 4; j++) {
+                	line32 = 0;
+                	hits = 0;
                     file.read( (char*) &line32, 4);
                     hits = decodeRoc32(line32, 8);
                     hitmap[chanID].push_back(hits);
-                    line32 = 0;
-                    if (hits > maxhits) maxhits = hits;
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             case 3:
                 for (int j = 0; j < blocksize / 8; j++) {
+                	line64 = 0;
+                	hits = 0;
                     file.read( (char*) &line64, 8);
                     hits = decodeRoc64(line64, 8);
                     hitmap[chanID].push_back(hits);
-                    line64 = 0;
-                    if (hits > maxhits) maxhits = hits;
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             default:
