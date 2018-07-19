@@ -39,7 +39,6 @@ int Decoder::open(std::string filename, int chanBase) {
     uint32_t header;
     uint32_t line32;
     uint64_t line64;
-	hitmap.clear();
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
         header = headerBuffer << (i * 2);
@@ -75,7 +74,7 @@ int Decoder::open(std::string filename, int chanBase) {
             case 3:
                 for (int j = 0; j < blocksize / 8; j++) {
                     file.read( (char*) &line64, 8);
-                    hits = decodeRoc64(line32, 8);
+                    hits = decodeRoc64(line64, 8);
                     hitmap[chanID].push_back(hits);
                     line64 = 0;
                 }
@@ -91,12 +90,12 @@ int Decoder::open(std::string filename, int chanBase) {
 }
 
 void Decoder::process(std::string path) {
-	TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits",
+	std::cout<<maxhits<<'\n';
+	TH2D hFEDChan = TH2D("Binary", "Hits per Channel;Channel;Number of Hits",
 						 48, 1., 49., ((float)maxhits + ((float)maxhits * 0.5)),
 						 -0.5, ((float)maxhits + ((float)maxhits * 0.5) - 0.5));
 	hFEDChan.SetOption("COLZ");
 	for (auto const& chan : hitmap) {
-		std::cout<<chan<<'\n';
 		for (int hits : chan.second) {
 			hFEDChan.Fill(chan.first, hits);
 		}
