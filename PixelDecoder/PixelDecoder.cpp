@@ -52,7 +52,7 @@ int Decoder::open(std::string filename, int chanBase) {
             case 0:
                 for (int j = 0; j < blocksize / 4; j) {
                     file.read( (char*) &line32, 4);
-                    hits = decodeRoc32(line32, chanID, 2);
+                    hits = decodeRoc32(line32, 2);
                     hitmap[chanID].push_back(hits);
                     line32 = 0;
                 }
@@ -60,7 +60,7 @@ int Decoder::open(std::string filename, int chanBase) {
             case 1:
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hits = decodeRoc32(line32, chanID, 4);
+                    hits = decodeRoc32(line32, 4);
                     hitmap[chanID].push_back(hits);
                     line32 = 0;
                 }
@@ -68,7 +68,7 @@ int Decoder::open(std::string filename, int chanBase) {
             case 2:
                 for (int j = 0; j < blocksize / 4; j++) {
                     file.read( (char*) &line32, 4);
-                    hits = decodeRoc32(line32, chanID, 8);
+                    hits = decodeRoc32(line32, 8);
                     hitmap[chanID].push_back(hits);
                     line32 = 0;
                 }
@@ -76,7 +76,7 @@ int Decoder::open(std::string filename, int chanBase) {
             case 3:
                 for (int j = 0; j < blocksize / 8; j++) {
                     file.read( (char*) &line64, 8);
-                    hits = decodeRoc64(line32, chanID, 8);
+                    hits = decodeRoc64(line32, 8);
                     hitmap[chanID].push_back(hits);
                     std::cout<<hits<<' ';
                     line64 = 0;
@@ -99,7 +99,7 @@ void Decoder::process(std::string path) {
 						 -0.5, ((float)maxhits + ((float)maxhits * 0.5) - 0.5));
 	hFEDChan.SetOption("COLZ");
 	for (auto const& chan : hitmap) {
-		for (int& hits : chan.second) {
+		for (int hits : chan.second) {
 			hFEDChan.Fill(chan.first, hits);
 		}
 	}
