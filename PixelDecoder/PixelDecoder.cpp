@@ -94,7 +94,8 @@ int Decoder::open(std::string filename, int chanBase) {
 void Decoder::process(std::string path) {
 	TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits",
 						 48, 1., 49., ((float)maxhits + ((float)maxhits * 0.5)),
-						 -0.5, ((float)hhChan + ((float)hhChan * 0.5) - 0.5));
+						 -0.5, ((float)maxhits + ((float)maxhits * 0.5) - 0.5));
+	hFEDChan.SetOption("COLZ");
 	for (auto const& chHit : hitmap) {
 		hFEDChan.Fill(chHit.first, chHit.second);
 	}

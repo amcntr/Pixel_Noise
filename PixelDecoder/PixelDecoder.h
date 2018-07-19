@@ -21,7 +21,7 @@ private:
     std::vector< std::pair<int, int> > hitmap;
     int maxhits = 0;
 public:
-    Decoder() { hFEDChan.SetOption("COLZ"); }
+    Decoder() { }
     virtual ~Decoder() { }
     int open(std::string file, int chanBase);
     int decodeRoc32(uint32_t line, int chanID, int count);
