@@ -20,13 +20,13 @@
 class Decoder {
 private:
     std::map<int, std::vector<int> > hitmap;
-    int maxhits = 0;
+    int maxhits;
 public:
     Decoder() { }
-    virtual ~Decoder() { }
+    virtual ~Decoder() { maxhits = 0; }
     int open(std::string file, int chanBase);
-    int decodeRoc32(uint32_t line, int chanID, int count);
-    int decodeRoc64(uint64_t line, int chanID, int count);
+    int decodeRoc32(uint32_t line, int count);
+    int decodeRoc64(uint64_t line, int count);
     void process(std::string path);
 };
 
