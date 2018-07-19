@@ -47,7 +47,6 @@ int Decoder::open(std::string filename, int chanBase) {
         int chanID = chanBase + i;
         std::cout << "Processing channel " << i << '\n';
         int hits = 0;
-        std::cout<<chanID<<' ';
         switch (header) {
             case 0:
                 for (int j = 0; j < blocksize / 4; j) {
@@ -78,7 +77,6 @@ int Decoder::open(std::string filename, int chanBase) {
                     file.read( (char*) &line64, 8);
                     hits = decodeRoc64(line32, 8);
                     hitmap[chanID].push_back(hits);
-                    std::cout<<hits<<' ';
                     line64 = 0;
                 }
                 break;
@@ -88,7 +86,6 @@ int Decoder::open(std::string filename, int chanBase) {
         if (hits > maxhits)
         	maxhits = hits;
     }
-    std::cout<<'\n';
     file.close();
     return 1;
 }
@@ -99,6 +96,7 @@ void Decoder::process(std::string path) {
 						 -0.5, ((float)maxhits + ((float)maxhits * 0.5) - 0.5));
 	hFEDChan.SetOption("COLZ");
 	for (auto const& chan : hitmap) {
+		std::cout<<chan<<'\n';
 		for (int hits : chan.second) {
 			hFEDChan.Fill(chan.first, hits);
 		}
