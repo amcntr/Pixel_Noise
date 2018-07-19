@@ -53,6 +53,7 @@ int Decoder::open(std::string filename, int chanBase) {
                     hits = decodeRoc32(line32, 2);
                     hitmap[chanID].push_back(hits);
                     line32 = 0;
+                    if (hits > maxhits) maxhits = hits;
                 }
                 break;
             case 1:
@@ -61,6 +62,7 @@ int Decoder::open(std::string filename, int chanBase) {
                     hits = decodeRoc32(line32, 4);
                     hitmap[chanID].push_back(hits);
                     line32 = 0;
+                    if (hits > maxhits) maxhits = hits;
                 }
                 break;
             case 2:
@@ -69,6 +71,7 @@ int Decoder::open(std::string filename, int chanBase) {
                     hits = decodeRoc32(line32, 8);
                     hitmap[chanID].push_back(hits);
                     line32 = 0;
+                    if (hits > maxhits) maxhits = hits;
                 }
                 break;
             case 3:
@@ -77,13 +80,12 @@ int Decoder::open(std::string filename, int chanBase) {
                     hits = decodeRoc64(line64, 8);
                     hitmap[chanID].push_back(hits);
                     line64 = 0;
+                    if (hits > maxhits) maxhits = hits;
                 }
                 break;
             default:
                 std::cout<<"Error: Incorrect header format.\n";
         }
-        if (hits > maxhits)
-        	maxhits = hits;
     }
     file.close();
     return 1;
