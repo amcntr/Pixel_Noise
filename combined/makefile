@@ -16,8 +16,9 @@ clean :
 all : $(LINK_TARGET)
 	echo All done
 
-$(LINK_TARGET) : $(OBJS)
-	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
+Main.o : Decoder.h Encoder.h Includes.h
+Decoder.o : Decoder.h Includes.h
+Encoder.o : Encoder.h Includes.h
 
 Main.o : Main.cpp
 	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
@@ -28,6 +29,5 @@ Decoder.o : Decoder.cpp
 Encoder.o : Encoder.cpp
 	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
 
-Main.o : Decoder.h Encoder.h Includes.h
-Decoder.o : Decoder.h Includes.h
-Encoder.o : Encoder.h Includes.h
+$(LINK_TARGET) : $(OBJS)
+	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
