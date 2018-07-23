@@ -96,10 +96,10 @@ int main(int argc, char* argv[]) {
     if (decode.open("SRAMhit2.bin", 33) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
-    std::cout << "Done checking binary files.\n\nGenerating histogram from binary data.\n"
+    std::cout << "Done checking binary files.\n\nGenerating histogram from binary data.\n";
 
-    decode.process(path);
-    std::cout << "Done generating histgram from binary data."
+    decode.process();
+    std::cout << "Done generating histgram from binary data.";
 
     t2 = clock();
     float seconds = ((float)t2 - (float)t1) / CLOCKS_PER_SEC;
