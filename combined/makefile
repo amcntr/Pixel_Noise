@@ -3,31 +3,22 @@ CXXFLAGS = -g $(shell root-config --cflags)
 LDFLAGS = -g $(shell root-config --ldflags)
 LDLIBS = $(shell root-config --libs)
 
-LINK_TARGET = PixelEncoder
+TARGET ?= PixelEncoder
+SRC_DIRS ?= ./src
 
-OBJS = Encoder.o Decoder.o Main.o
+SRCS := $(shell find $(SRC_DIRS) -name *.cpp)
+OBJS := $(addsuffix .o,$(basename $(SRCS)))
+DEPS := $(OBJS:.o=.d)
 
-REBUILDABLES = $(OBJS) $(LINK_TARGET)
+INC_DIRS := $(shell find $(SRC_DIRS) -type d)
+INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-clean :
-	rm -f $(REBUILDABLES)
-	echo Clean done
+$(TARGET) : $(OBJS)
+	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) $(OBJS) -o $@
 
-all : $(LINK_TARGET)
-	echo All done
+.PHONY: clean
+clean:
+	rm $(TARGET) $(OBJS) $(DEPS)
 
-Main.o : Decoder.h Encoder.h Includes.h
-Decoder.o : Decoder.h Includes.h
-Encoder.o : Encoder.h Includes.h
+-include $(DEPS)
 
-Main.o : Main.cpp
-	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
-
-Decoder.o : Decoder.cpp
-	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
-
-Encoder.o : Encoder.cpp
-	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
-
-$(LINK_TARGET) : $(OBJS)
-	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ $(OBJS)
