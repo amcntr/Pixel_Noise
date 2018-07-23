@@ -30,4 +30,4 @@ Encoder.o : Encoder.cpp
 	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
 
 $(LINK_TARGET) : $(OBJS)
-	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ -c $<
+	$(CC) $(LDFLAGS) $(CXXFLAGS) $(LDLIBS) -o $@ $(OBJS)
