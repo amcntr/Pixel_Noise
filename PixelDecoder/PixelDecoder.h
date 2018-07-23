@@ -8,10 +8,10 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include <map>
 #include <vector>
+#include <map>
 #include <string>
-#include <bitset>
+#include <utility>
 #include <TCanvas.h>
 #include <TH2.h>
 #include <TH2D.h>
@@ -19,13 +19,14 @@
 
 class Decoder {
 private:
-    TH2D hFEDChan = TH2D("hChanFED", "Binary Hits per Channel;Channel;Number of Hits", 48, 1., 49., 400, -0.5, 399.5);
+    std::map<int, std::vector<int> > hitmap;
+    int maxhits;
 public:
-    Decoder() { hFEDChan.SetOption("COLZ"); }
+    Decoder() { maxhits = 0; hitmap.clear(); }
     virtual ~Decoder() { }
     int open(std::string file, int chanBase);
-    int decodeRoc32(uint32_t line, int chanID, int count);
-    int decodeRoc64(uint64_t line, int chanID, int count);
+    int decodeRoc32(uint32_t line, int count);
+    int decodeRoc64(uint64_t line, int count);
     void process(std::string path);
 };
 

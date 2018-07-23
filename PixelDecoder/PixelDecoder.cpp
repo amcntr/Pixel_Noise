@@ -4,7 +4,7 @@
 
 #include "PixelDecoder.h"
 
-int Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
+int Decoder::decodeRoc32(uint32_t line, int count) {
     int hits = 0;
     uint32_t buf = 0;
     uint32_t bits = 32 / count;
@@ -16,7 +16,7 @@ int Decoder::decodeRoc32(uint32_t line, int chanID, int count) {
     return hits;
 }
 
-int Decoder::decodeRoc64(uint64_t line, int chanID, int count) {
+int Decoder::decodeRoc64(uint64_t line, int count) {
     int hits = 0;
     uint64_t buf = 0;
     uint64_t bits = 64 / count;
@@ -39,41 +39,52 @@ int Decoder::open(std::string filename, int chanBase) {
     uint32_t header;
     uint32_t line32;
     uint64_t line64;
+    int hits;
     file.read((char*)&headerBuffer, 4);
     for (int i = 0; i < 16; i++) {
         header = headerBuffer << (i * 2);
         header >>= (30);
         int chanID = chanBase + i;
         std::cout << "Processing channel " << i << '\n';
-        int hits = 0;
         switch (header) {
             case 0:
                 for (int j = 0; j < blocksize / 4; j) {
+                	line32 = 0;
+                	hits = 0;
                     file.read( (char*) &line32, 4);
-                    hits = decodeRoc32(line32, chanID, 2);
-                    hFEDChan.Fill(chanID, hits);
-                    line32 = 0;
+                    hits = decodeRoc32(line32, 2);
+                    hitmap[chanID].push_back(hits);
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             case 1:
                 for (int j = 0; j < blocksize / 4; j++) {
+                	line32 = 0;
+                	hits = 0;
                     file.read( (char*) &line32, 4);
-                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
-                    line32 = 0;
+                    hits = decodeRoc32(line32, 4);
+                    hitmap[chanID].push_back(hits);
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             case 2:
                 for (int j = 0; j < blocksize / 4; j++) {
+                	line32 = 0;
+                	hits = 0;
                     file.read( (char*) &line32, 4);
-                    hFEDChan.Fill(chanID, decodeRoc32(line32, chanID, 4));
-                    line32 = 0;
+                    hits = decodeRoc32(line32, 8);
+                    hitmap[chanID].push_back(hits);
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             case 3:
                 for (int j = 0; j < blocksize / 8; j++) {
+                	line64 = 0;
+                	hits = 0;
                     file.read( (char*) &line64, 8);
-                    hFEDChan.Fill(chanID, decodeRoc64(line64, chanID, 8));
-                    line64 = 0;
+                    hits = decodeRoc64(line64, 8);
+                    hitmap[chanID].push_back(hits);
+                    if (hits > maxhits) {maxhits = hits;}
                 }
                 break;
             default:
@@ -85,6 +96,16 @@ int Decoder::open(std::string filename, int chanBase) {
 }
 
 void Decoder::process(std::string path) {
+	std::cout << "Highest hits in a channel: " << maxhits << '\n';
+	TH2D hFEDChan = TH2D("Binary", "Hits per Channel in Binary Files;Channel;Number of Hits",
+						 48, 1., 49., ((float)maxhits + ((float)maxhits * 0.5)),
+						 -0.5, ((float)maxhits + ((float)maxhits * 0.5) - 0.5));
+	hFEDChan.SetOption("COLZ");
+	for (auto const& chan : hitmap) {
+		for (int hits : chan.second) {
+			hFEDChan.Fill(chan.first, hits);
+		}
+	}
     TCanvas* canvas = new TCanvas("canvas");
     hFEDChan.Draw();
     std::string filename = path + "histogram_binary.pdf";
