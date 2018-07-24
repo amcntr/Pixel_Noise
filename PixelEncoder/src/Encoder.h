@@ -25,7 +25,7 @@ using Events = std::map<int, Chans>;
 // fed id as key and event map
 using FEDs = std::map<int, Events>;
 
-class Pixel_Store {
+class Encoder {
   // Multiple Pixel Storage Class
   // stores pixels in a nested map structure
  private:
@@ -64,8 +64,8 @@ class Pixel_Store {
   // main storage
   FEDs storage;
  public:
-  Pixel_Store() { }           // constructor
-  virtual ~Pixel_Store() { }  // destructor
+  Encoder() { }           // constructor
+  virtual ~Encoder() { }  // destructor
 
   // adds a pixel to class
   int add(int event,

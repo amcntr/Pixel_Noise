@@ -36,18 +36,18 @@ int main(int argc, char* argv[]) {
     TTreeReaderValue<int> fed0(readerZ, "Data._fedID");
     TTreeReaderValue<int> layer0(readerZ, "Data._layer");
 
-    Pixel_Store pStore;
+    Encoder encoder;
 
     st1 = clock();
     std::cout << "\nStoring pixels...\n";
     // stores duplicate pixel amount
     int duplicates = 0;
-    // loop through TTree and store data in Pixel_Store
+    // loop through TTree and store data in the encoder
     while (readerH.Next()) {
-        duplicates += pStore.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
+        duplicates += encoder.add(*event, *fed, *layer, *chan, *roc, *row, *col, *adc);
     }
     while (readerZ.Next()) {
-        duplicates += pStore.add(*event0, *fed0, *layer0, 0, 0, 0, 0, 0);
+        duplicates += encoder.add(*event0, *fed0, *layer0, 0, 0, 0, 0, 0);
     }
 
     st2 = clock();
@@ -56,28 +56,28 @@ int main(int argc, char* argv[]) {
               << " seconds.\n\nProcessing Pixels...\n";
 
     // process stored data
-    pStore.process();
+    encoder.process();
 
     // output is stored in a string to print both to a file and terminal
     std::string output;
     output = "Total duplicate pixels: " + std::to_string(duplicates) +
-             "\nTotal events: " + std::to_string(pStore.totalEvents) +
-             "\nTotal events with zero hits: " + std::to_string(pStore.totalZeroEvents) +
-             "\nTotal hits: " + std::to_string(pStore.totalHits) +
-             "\nTotal FEDs: " + std::to_string(pStore.totalFEDs) +
-             "\nHighest hits in a roc: " + std::to_string(pStore.hhRoc) +
-             "\nHighest hits in a channel: " +std::to_string(pStore.hhChan) +
-             "\n\nHighest Avg Hit FED Id: " + std::to_string(pStore.haFEDID) +
-             "\nWith an avg hit count of: " + std::to_string(pStore.haFEDhit);
+             "\nTotal events: " + std::to_string(encoder.totalEvents) +
+             "\nTotal events with zero hits: " + std::to_string(encoder.totalZeroEvents) +
+             "\nTotal hits: " + std::to_string(encoder.totalHits) +
+             "\nTotal FEDs: " + std::to_string(encoder.totalFEDs) +
+             "\nHighest hits in a roc: " + std::to_string(encoder.hhRoc) +
+             "\nHighest hits in a channel: " +std::to_string(encoder.hhChan) +
+             "\n\nHighest Avg Hit FED Id: " + std::to_string(encoder.haFEDID) +
+             "\nWith an avg hit count of: " + std::to_string(encoder.haFEDhit);
 
     et1 = clock();
     std::cout << "\n\nEncoding binary files...\n\n";
-    pStore.encode(pStore.haFEDID);
+    encoder.encode(encoder.haFEDID);
     et2 = clock();
     std::cout << "\nDone encoding with an encoding time of "
               << (((float)et2 - (float)et1) / CLOCKS_PER_SEC)
               << " seconds.\n\nGenerating histogram from source data.\n";
-    pStore.graph();
+    encoder.graph();
     std::cout << "\nDone generating histogram from source data.\n";
     file->Close();
 
@@ -86,19 +86,19 @@ int main(int argc, char* argv[]) {
 
     // output process time in seconds
     
-    Decoder decode;
+    Decoder decoder;
 
     std::cout<<"\nChecking binary files.\n";
-    if (decode.open("SRAMhit0.bin", 1) != 1)
+    if (decoder.open("SRAMhit0.bin", 1) != 1)
         std::cout<<"Error: Missing SRAMhit0.bin in directory.\n";
-    if (decode.open("SRAMhit1.bin", 17) != 1)
+    if (decoder.open("SRAMhit1.bin", 17) != 1)
         std::cout<<"Error: Missing SRAMhit1.bin in directory.\n";
-    if (decode.open("SRAMhit2.bin", 33) != 1)
+    if (decoder.open("SRAMhit2.bin", 33) != 1)
         std::cout<<"Error: Missing SRAMhit2.bin in directory.\n";
 
     std::cout << "Done checking binary files.\n\nGenerating histogram from binary data.\n";
 
-    decode.process();
+    decoder.graph();
     std::cout << "Done generating histgram from binary data.";
 
     t2 = clock();

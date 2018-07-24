@@ -84,7 +84,7 @@ int Decoder::open(std::string filename, int chanBase) {
     return 1;
 }
 
-void Decoder::process(std::string path) {
+void Decoder::graph(std::string path) {
     TCanvas* canvas = new TCanvas("canvas");
     hFEDChan.Draw();
     std::string filename = path + "histogram_binary.pdf";

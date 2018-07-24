@@ -20,7 +20,7 @@
 
 // checks if pixel is already stored and adds to container
 // for events with zero hits, add layer 0
-int Pixel_Store::add(int event,
+int Encoder::add(int event,
                      int fed,
                      int layer,
                      int ch,
@@ -53,7 +53,7 @@ int Pixel_Store::add(int event,
     }
 }
 
-void Pixel_Store::process() {
+void Encoder::process() {
     haFEDhit = 0;
     totalHits = 0;
     totalZeroEvents = 0;
@@ -92,7 +92,7 @@ void Pixel_Store::process() {
 
 // convert data in map structure to binary format
 // and place in a buffer for file writing.
-void Pixel_Store::encode(int targetFED) {
+void Encoder::encode(int targetFED) {
     // These are buffers for writing the data to files
     // 1 block for each channel
     // 16 channels per file
@@ -257,7 +257,7 @@ void Pixel_Store::encode(int targetFED) {
 }
 
 
-void Pixel_Store::graph() {
+void Encoder::graph() {
     TCanvas* canvas = new TCanvas("canvas");
     TH2D *hChanROC[48], *hFEDChan;
     std::string title = "Hits Per Channel in FED #" + std::to_string(haFEDID) +
